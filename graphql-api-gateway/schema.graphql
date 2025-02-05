@@ -1,0 +1,115 @@
+# Entry point for Apollo Federation
+extend schema {
+  query: Query
+  mutation: Mutation
+}
+
+# ==============================
+# Product Service Schema
+# ==============================
+type Product @key(fields: "id") {
+  id: ID!
+  name: String!
+  description: String
+  price: Float!
+  category: String
+  tags: [String]
+  inventory: Int!
+  reviews: [Review]
+  ratings: Float
+}
+
+type Review {
+  id: ID!
+  userId: ID!
+  comment: String!
+  rating: Float!
+}
+
+extend type Query {
+  getProduct(id: ID!): Product
+  listProducts(category: String, tag: String): [Product]
+}
+
+extend type Mutation {
+  createProduct(name: String!, description: String, price: Float!, category: String, tags: [String], inventory: Int!): Product
+  updateProduct(id: ID!, name: String, description: String, price: Float, category: String, tags: [String], inventory: Int): Product
+  deleteProduct(id: ID!): Boolean
+}
+
+# ==============================
+# Order Service Schema
+# ==============================
+type Order @key(fields: "id") {
+  id: ID!
+  userId: ID!
+  products: [OrderItem!]!
+  status: OrderStatus!
+  totalAmount: Float!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type OrderItem {
+  productId: ID!
+  quantity: Int!
+  price: Float!
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELED
+}
+
+extend type Query {
+  getOrder(id: ID!): Order
+  listOrders(userId: ID!): [Order]
+}
+
+extend type Mutation {
+  placeOrder(userId: ID!, items: [OrderItemInput!]!): Order
+  updateOrderStatus(id: ID!, status: OrderStatus!): Order
+  cancelOrder(id: ID!): Boolean
+}
+
+input OrderItemInput {
+  productId: ID!
+  quantity: Int!
+}
+
+# ==============================
+# Payment Service Schema
+# ==============================
+type Payment @key(fields: "id") {
+  id: ID!
+  orderId: ID!
+  status: PaymentStatus!
+  amount: Float!
+  provider: PaymentProvider!
+  transactionId: String
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+  OTHER
+}
+
+extend type Query {
+  getPayment(id: ID!): Payment
+}
+
+extend type Mutation {
+  processPayment(orderId: ID!, amount: Float!, provider: PaymentProvider!): Payment
+  refundPayment(id: ID!): Boolean
+}
