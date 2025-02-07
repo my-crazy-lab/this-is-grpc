@@ -48,7 +48,11 @@ var port = flag.Int("port", 50051, "the port to serve on")
 
 func main() {
 	flag.Parse()
-	fmt.Printf("server starting on port %d...\n", *port)
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
 
 	cert, err := tls.LoadX509KeyPair(data.Path("x509/server_cert.pem"), data.Path("x509/server_key.pem"))
 	if err != nil {
@@ -62,12 +66,10 @@ func main() {
 		// Enable TLS for all incoming connections.
 		grpc.Creds(credentials.NewServerTLSFromCert(&cert)),
 	}
+
 	s := grpc.NewServer(opts...)
 	pb.RegisterEchoServer(s, &ecServer{})
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
+	fmt.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

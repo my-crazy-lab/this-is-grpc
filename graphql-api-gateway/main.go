@@ -34,7 +34,7 @@ func main() {
 		}
 	})
 
-	fmt.Println("Now server is running on port 8080")
+	fmt.Println("Now server is running on port 9090")
 
 	fmt.Println("")
 
@@ -43,7 +43,7 @@ curl \
 -X POST \
 -H "Content-Type: application/json" \
 --data '{ "query": "{ todo(id:\"b\") { id text done } }" }' \
-http://localhost:8080/graphql`)
+http://localhost:9090/graphql`)
 
 	fmt.Println("")
 
@@ -52,7 +52,7 @@ curl \
 -X POST \
 -H "Content-Type: application/json" \
 --data '{ "query": "mutation { createTodo(text:\"My New todo\") { id text done } }" }' \
-http://localhost:8080/graphql`)
+http://localhost:9090/graphql`)
 
 	fmt.Println("")
 
@@ -61,7 +61,7 @@ curl \
 -X POST \
 -H "Content-Type: application/json" \
 --data '{ "query": "mutation { updateTodo(id:\"a\", done: true) { id text done } }" }' \
-http://localhost:8080/graphql`)
+http://localhost:9090/graphql`)
 
 	fmt.Println("")
 
@@ -70,7 +70,16 @@ curl \
 -X POST \
 -H "Content-Type: application/json" \
 --data '{ "query": "{ todoList { id text done } }" }' \
-http://localhost:8080/graphql`)
+http://localhost:9090/graphql`)
 
-	http.ListenAndServe(":8080", nil)
+	fmt.Println("")
+
+	fmt.Println(`Sign in:
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+--data '{ "query": "mutation { signIn(phone:\"123\") { token } }" }' \
+http://localhost:9090/graphql`)
+
+	http.ListenAndServe(":9090", nil)
 }
