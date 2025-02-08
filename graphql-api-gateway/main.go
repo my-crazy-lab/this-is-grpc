@@ -24,7 +24,7 @@ func main() {
 		}
 		result := graphql.Do(graphql.Params{
 			Context:        req.Context(),
-			Schema:         schema.TodoSchema,
+			Schema:         schema.RootSchema,
 			RequestString:  p.Query,
 			VariableValues: p.Variables,
 			OperationName:  p.Operation,
@@ -78,7 +78,7 @@ http://localhost:9090/graphql`)
 curl \
 -X POST \
 -H "Content-Type: application/json" \
---data '{ "query": "mutation { signIn(phone:\"123\") { token } }" }' \
+--data '{ "query": "mutation { signIn(phoneNumber:\"123\") { token } }" }' \
 http://localhost:9090/graphql`)
 
 	http.ListenAndServe(":9090", nil)

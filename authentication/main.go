@@ -36,7 +36,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	pb "google.golang.org/grpc/examples/features/proto/echo"
+	pb "github.com/my-crazy-lab/this-is-grpc/authentication/proto/echo"
 )
 
 var (
@@ -80,7 +80,7 @@ type ecServer struct {
 }
 
 func (s *ecServer) UnaryEcho(_ context.Context, req *pb.EchoRequest) (*pb.EchoResponse, error) {
-	return &pb.EchoResponse{Message: req.Message}, nil
+	return &pb.EchoResponse{Message: req.Message + " res from auth service"}, nil
 }
 
 // valid validates the authorization.
@@ -109,6 +109,8 @@ func ensureValidToken(ctx context.Context, req any, _ *grpc.UnaryServerInfo, han
 	if !valid(md["authorization"]) {
 		return nil, errInvalidToken
 	}
+
+	fmt.Printf("TOken pass \n")
 	// Continue execution of handler after ensuring a valid token.
 	return handler(ctx, req)
 }
