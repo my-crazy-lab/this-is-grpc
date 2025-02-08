@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/graphql-go/graphql"
-	ecpb "github.com/my-crazy-lab/this-is-grpc/graph-api-gateway/proto/echo"
+	authPb "github.com/my-crazy-lab/this-is-grpc/graph-api-gateway/proto/account"
+
 	"github.com/my-crazy-lab/this-is-grpc/graph-api-gateway/rpcServices"
 )
 
@@ -68,9 +69,12 @@ var authMutation = graphql.Fields{
 				Type: graphql.String,
 			},
 		},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
 			rgc := rpcServices.NewAuthenticationService()
-			callUnaryEcho(rgc, "hello world")
+
+			phoneNumber, _ := params.Args["phoneNumber"].(string)
+
+			login(rgc, phoneNumber, "")
 
 			return TheAuth, nil
 		},
@@ -95,12 +99,22 @@ var authQuery = graphql.Fields{
 	},
 }
 
-func callUnaryEcho(client ecpb.EchoClient, message string) {
+// func callUnaryEcho(client ecpb.EchoClient, message string) {
+// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// 	defer cancel()
+// 	resp, err := client.UnaryEcho(ctx, &ecpb.EchoRequest{Message: message})
+// 	if err != nil {
+// 		log.Fatalf("client.UnaryEcho(_) = _, %v: ", err)
+// 	}
+// 	fmt.Println("UnaryEcho: ", resp.Message)
+// }
+
+func login(client authPb.AccountClient, phone string, pass string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	resp, err := client.UnaryEcho(ctx, &ecpb.EchoRequest{Message: message})
+	resp, err := client.Login(ctx, &authPb.AccountRequest{PhoneNumber: phone, Password: pass})
 	if err != nil {
 		log.Fatalf("client.UnaryEcho(_) = _, %v: ", err)
 	}
-	fmt.Println("UnaryEcho: ", resp.Message)
+	fmt.Println("token: ", resp.Token)
 }

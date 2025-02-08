@@ -21,33 +21,31 @@
 package main
 
 import (
-	"context"
 	"crypto/tls"
 	"flag"
 	"fmt"
 	"log"
 	"net"
-	"strings"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/examples/data"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 
+	"github.com/my-crazy-lab/this-is-grpc/authentication/pg"
+	authPb "github.com/my-crazy-lab/this-is-grpc/authentication/proto/account"
 	pb "github.com/my-crazy-lab/this-is-grpc/authentication/proto/echo"
-)
+	"github.com/my-crazy-lab/this-is-grpc/authentication/secure"
 
-var (
-	errMissingMetadata = status.Errorf(codes.InvalidArgument, "missing metadata")
-	errInvalidToken    = status.Errorf(codes.Unauthenticated, "invalid token")
+	"github.com/my-crazy-lab/this-is-grpc/authentication/server"
 )
 
 var port = flag.Int("port", 50051, "the port to serve on")
 
 func main() {
 	flag.Parse()
+
+	pg.InitDB()
+	defer pg.CloseDB()
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
@@ -62,55 +60,18 @@ func main() {
 		// The following grpc.ServerOption adds an interceptor for all unary
 		// RPCs. To configure an interceptor for streaming RPCs, see:
 		// https://godoc.org/google.golang.org/grpc#StreamInterceptor
-		grpc.UnaryInterceptor(ensureValidToken),
+		grpc.UnaryInterceptor(secure.EnsureValidToken),
 		// Enable TLS for all incoming connections.
 		grpc.Creds(credentials.NewServerTLSFromCert(&cert)),
 	}
 
 	s := grpc.NewServer(opts...)
-	pb.RegisterEchoServer(s, &ecServer{})
+
+	pb.RegisterEchoServer(s, server.NewEchoServer())
+	authPb.RegisterAccountServer(s, server.NewAuthServer())
+
 	fmt.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
-}
-
-type ecServer struct {
-	pb.UnimplementedEchoServer
-}
-
-func (s *ecServer) UnaryEcho(_ context.Context, req *pb.EchoRequest) (*pb.EchoResponse, error) {
-	return &pb.EchoResponse{Message: req.Message + " res from auth service"}, nil
-}
-
-// valid validates the authorization.
-func valid(authorization []string) bool {
-	if len(authorization) < 1 {
-		return false
-	}
-	token := strings.TrimPrefix(authorization[0], "Bearer ")
-	// Perform the token validation here. For the sake of this example, the code
-	// here forgoes any of the usual OAuth2 token validation and instead checks
-	// for a token matching an arbitrary string.
-	return token == "some-secret-token"
-}
-
-// ensureValidToken ensures a valid token exists within a request's metadata. If
-// the token is missing or invalid, the interceptor blocks execution of the
-// handler and returns an error. Otherwise, the interceptor invokes the unary
-// handler.
-func ensureValidToken(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return nil, errMissingMetadata
-	}
-	// The keys within metadata.MD are normalized to lowercase.
-	// See: https://godoc.org/google.golang.org/grpc/metadata#New
-	if !valid(md["authorization"]) {
-		return nil, errInvalidToken
-	}
-
-	fmt.Printf("TOken pass \n")
-	// Continue execution of handler after ensuring a valid token.
-	return handler(ctx, req)
 }

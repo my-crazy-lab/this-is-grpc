@@ -78,7 +78,7 @@ http://localhost:9090/graphql`)
 curl \
 -X POST \
 -H "Content-Type: application/json" \
---data '{ "query": "mutation { signIn(phoneNumber:\"123\") { token } }" }' \
+--data '{ "query": "mutation { signIn(phoneNumber:\"+123456789\") { token } }" }' \
 http://localhost:9090/graphql`)
 
 	http.ListenAndServe(":9090", nil)

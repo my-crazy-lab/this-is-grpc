@@ -4,7 +4,8 @@ import (
 	"flag"
 	"log"
 
-	ecpb "github.com/my-crazy-lab/this-is-grpc/graph-api-gateway/proto/echo"
+	authPb "github.com/my-crazy-lab/this-is-grpc/graph-api-gateway/proto/account"
+
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -12,7 +13,7 @@ import (
 	"google.golang.org/grpc/examples/data"
 )
 
-func NewAuthenticationService() ecpb.EchoClient {
+func NewAuthenticationService() authPb.AccountClient {
 	var addr = flag.String("addr", "localhost:50051", "the address to connect to")
 
 	// Set up the credentials for the connection.
@@ -37,7 +38,7 @@ func NewAuthenticationService() ecpb.EchoClient {
 		log.Fatalf("did not connect: %v", err)
 	}
 
-	return ecpb.NewEchoClient(conn)
+	return authPb.NewAccountClient(conn)
 }
 
 // fetchToken simulates a token lookup and omits the details of proper token
