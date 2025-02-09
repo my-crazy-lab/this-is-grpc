@@ -82,7 +82,7 @@ http://localhost:9090/graphql`)
 curl \
 -X POST \
 -H "Content-Type: application/json" \
---data '{ "query": "mutation { signIn(phoneNumber:\"+123456789\") { token } }" }' \
+--data '{ "query": "mutation { signIn(phoneNumber:\"123456\",password:\"hihihi\") { token } }" }' \
 http://localhost:9090/graphql`)
 
 	fmt.Println("")
@@ -91,7 +91,7 @@ http://localhost:9090/graphql`)
 curl \
 -X POST \
 -H "Content-Type: application/json" \
---data '{ "query": "mutation { signUp(phoneNumber:\"+123456789\", password:\"hihihi\") { token } }" }' \
+--data '{ "query": "mutation { signUp(phoneNumber:\"123456\", password:\"hihihi\") { token } }" }' \
 http://localhost:9090/graphql`)
 
 	http.ListenAndServe(":9090", nil)

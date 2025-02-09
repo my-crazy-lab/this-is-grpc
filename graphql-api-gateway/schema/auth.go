@@ -21,6 +21,10 @@ type User struct {
 	Username string `json:"username"`
 }
 
+type LoginResponse struct {
+	Token string `json:"token"`
+}
+
 var authType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Auth",
 	Fields: graphql.Fields{
@@ -53,13 +57,17 @@ var authMutation = graphql.Fields{
 			"phoneNumber": &graphql.ArgumentConfig{
 				Type: graphql.String,
 			},
+			"password": &graphql.ArgumentConfig{
+				Type: graphql.String,
+			},
 		},
 		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
 			phoneNumber, _ := params.Args["phoneNumber"].(string)
+			password, _ := params.Args["password"].(string)
 
-			token := login(rpcServices.AuthenticationService, phoneNumber, "")
+			token := login(rpcServices.AuthenticationService, phoneNumber, password)
 
-			return token, nil
+			return LoginResponse{token}, nil
 		},
 	},
 	"signUp": &graphql.Field{

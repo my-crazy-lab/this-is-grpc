@@ -51,7 +51,6 @@ func CheckPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-// Generate JWT Token
 func GenerateJWT(userID int) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour) // Token valid for 24 hours
 	claims := &Claims{
@@ -60,8 +59,12 @@ func GenerateJWT(userID int) (string, error) {
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},
 	}
+
+	// 🔹 Convert secret to []byte
+	secretKey := []byte(getJwtSecret())
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(getJwtSecret())
+	return token.SignedString(secretKey) // ✅ Correct: Using []byte
 }
 
 func isErrNoRows(err error) bool {

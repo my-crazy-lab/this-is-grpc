@@ -24,6 +24,7 @@ func (s *authServer) Login(_ context.Context, req *authPb.AccountRequest) (*auth
 	}
 
 	token, err := pg.GenerateJWT(user.ID)
+
 	if err != nil {
 		return nil, err
 	}
