@@ -13,8 +13,16 @@ import (
 	"google.golang.org/grpc/examples/data"
 )
 
-func NewAuthenticationService() authPb.AccountClient {
-	var addr = flag.String("addr", "localhost:50051", "the address to connect to")
+// avoid services interface establish multi times
+var AuthenticationService authPb.AccountClient
+var ClientConnection *grpc.ClientConn
+
+var addr = flag.String("addr", "localhost:50051", "the address to connect to")
+
+func NewAuthenticationService() {
+	if AuthenticationService != nil {
+		return
+	}
 
 	// Set up the credentials for the connection.
 	perRPC := oauth.TokenSource{TokenSource: oauth2.StaticTokenSource(fetchToken())}
@@ -38,7 +46,8 @@ func NewAuthenticationService() authPb.AccountClient {
 		log.Fatalf("did not connect: %v", err)
 	}
 
-	return authPb.NewAccountClient(conn)
+	ClientConnection = conn
+	AuthenticationService = authPb.NewAccountClient(conn)
 }
 
 // fetchToken simulates a token lookup and omits the details of proper token
@@ -49,6 +58,3 @@ func fetchToken() *oauth2.Token {
 		AccessToken: "some-secret-token",
 	}
 }
-
-// avoid services interface establish multi times
-// var AuthenticationService = NewAuthenticationService()

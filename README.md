@@ -19,3 +19,10 @@
         - pending -> shopper confirm shipping for shipper
         - delivering -> customer confirm at address 
 - Notification service
+
+## run protoc
+```
+protoc --go_out=authentication/proto/account --go_opt=paths=source_relative \
+       --go-grpc_out=authentication/proto/account --go-grpc_opt=paths=source_relative \
+       proto/account.proto
+```

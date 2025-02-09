@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/graphql-go/graphql"
+	"github.com/my-crazy-lab/this-is-grpc/graph-api-gateway/rpcServices"
 	"github.com/my-crazy-lab/this-is-grpc/graph-api-gateway/schema"
 )
 
@@ -16,6 +17,9 @@ type postData struct {
 }
 
 func main() {
+	rpcServices.NewAuthenticationService()
+	defer rpcServices.ClientConnection.Close()
+
 	http.HandleFunc("/graphql", func(w http.ResponseWriter, req *http.Request) {
 		var p postData
 		if err := json.NewDecoder(req.Body).Decode(&p); err != nil {
@@ -38,11 +42,11 @@ func main() {
 
 	fmt.Println("")
 
-	fmt.Println(`Get single todo:
+	fmt.Println(`Get users:
 curl \
 -X POST \
 -H "Content-Type: application/json" \
---data '{ "query": "{ todo(id:\"b\") { id text done } }" }' \
+--data '{ "query": "{ getUsers { id phoneNumber password } }" }' \
 http://localhost:9090/graphql`)
 
 	fmt.Println("")
@@ -79,6 +83,15 @@ curl \
 -X POST \
 -H "Content-Type: application/json" \
 --data '{ "query": "mutation { signIn(phoneNumber:\"+123456789\") { token } }" }' \
+http://localhost:9090/graphql`)
+
+	fmt.Println("")
+
+	fmt.Println(`Sign up:
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+--data '{ "query": "mutation { signUp(phoneNumber:\"+123456789\", password:\"hihihi\") { token } }" }' \
 http://localhost:9090/graphql`)
 
 	http.ListenAndServe(":9090", nil)

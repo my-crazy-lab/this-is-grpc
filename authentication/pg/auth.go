@@ -2,12 +2,14 @@ package pg
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx"
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -44,7 +46,7 @@ func hashPassword(password string) (string, error) {
 }
 
 // Check password hash
-func checkPasswordHash(password, hash string) bool {
+func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
@@ -62,14 +64,61 @@ func GenerateJWT(userID int) (string, error) {
 	return token.SignedString(getJwtSecret())
 }
 
+func isErrNoRows(err error) bool {
+	return errors.Is(errors.Unwrap(err), pgx.ErrNoRows) || err.Error() == "no rows in result set"
+}
+
 func GetUserByPhone(phone string) (*User, error) {
 	query := "SELECT id, phone, password FROM users WHERE phone = $1"
 	row := DBPool.QueryRow(context.Background(), query, phone)
-	fmt.Printf("phone: ", phone)
+
 	var user User
-	if err := row.Scan(&user.ID, &user.PhoneNumber, &user.Password); err != nil {
+	err := row.Scan(&user.ID, &user.PhoneNumber, &user.Password)
+	if err != nil {
+		if isErrNoRows(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get user by phone: %w", err)
+	}
+
+	return &user, nil
+}
+
+func InsertNewUser(phone, password string) error {
+	passHashed, err := hashPassword(password)
+
+	if err != nil {
+		return err
+	}
+
+	query := "INSERT INTO users (phone, password) VALUES ($1, $2)"
+	_, err = DBPool.Exec(context.Background(), query, phone, passHashed)
+
+	return err
+}
+
+func GetUsers() ([]User, error) {
+	query := "SELECT id, phone, password FROM users"
+	rows, err := DBPool.Query(context.Background(), query)
+	if err != nil {
 		return nil, err
 	}
-	fmt.Printf(user.Password)
-	return &user, nil
+	defer rows.Close()
+
+	// var users []User
+	users := make([]User, 0) // ✅ Always initialize slice
+
+	for rows.Next() {
+		var user User
+		if err := rows.Scan(&user.ID, &user.PhoneNumber, &user.Password); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

@@ -2,7 +2,6 @@ package schema
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
@@ -16,9 +15,7 @@ type Account struct {
 	PhoneNumber string `json:"phoneNumber"`
 	Password    string `json:"password"`
 }
-type Auth struct {
-	Token string `json:"token"`
-}
+
 type User struct {
 	Id       string `json:"id"`
 	Username string `json:"username"`
@@ -32,7 +29,6 @@ var authType = graphql.NewObject(graphql.ObjectConfig{
 		},
 	},
 })
-var TheAuth = Auth{Token: "aaa"}
 
 var accountType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Account",
@@ -43,24 +39,13 @@ var accountType = graphql.NewObject(graphql.ObjectConfig{
 		"password": &graphql.Field{
 			Type: graphql.String,
 		},
-	},
-})
-var userType = graphql.NewObject(graphql.ObjectConfig{
-	Name: "User",
-	Fields: graphql.Fields{
 		"id": &graphql.Field{
-			Type: graphql.String,
-		},
-		"username": &graphql.Field{
 			Type: graphql.String,
 		},
 	},
 })
 
 var authMutation = graphql.Fields{
-	/*
-	   curl -g 'http://localhost:9090/graphql?query={signIn{phoneNumber}}'
-	*/
 	"signIn": &graphql.Field{
 		Type:        authType,
 		Description: "User sign in",
@@ -70,51 +55,77 @@ var authMutation = graphql.Fields{
 			},
 		},
 		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
-			rgc := rpcServices.NewAuthenticationService()
-
 			phoneNumber, _ := params.Args["phoneNumber"].(string)
 
-			login(rgc, phoneNumber, "")
+			token := login(rpcServices.AuthenticationService, phoneNumber, "")
 
-			return TheAuth, nil
+			return token, nil
+		},
+	},
+	"signUp": &graphql.Field{
+		Type:        authType,
+		Description: "User sign up",
+		Args: graphql.FieldConfigArgument{
+			"phoneNumber": &graphql.ArgumentConfig{
+				Type: graphql.String,
+			},
+			"password": &graphql.ArgumentConfig{
+				Type: graphql.String,
+			},
+		},
+		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+			phoneNumber, _ := params.Args["phoneNumber"].(string)
+			password, _ := params.Args["password"].(string)
+
+			msg := register(rpcServices.AuthenticationService, phoneNumber, password)
+			return msg, nil
 		},
 	},
 }
 
 var authQuery = graphql.Fields{
-	/*
-	   curl -g 'http://localhost:9090/graphql?query={getUserDetail(token:"token"){userId,username}}'
-	*/
-	"getUserDetail": &graphql.Field{
-		Type:        userType,
-		Description: "Get user information",
-		Args: graphql.FieldConfigArgument{
-			"token": &graphql.ArgumentConfig{
-				Type: graphql.String,
-			},
-		},
-		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
-			return User{}, nil
+	"getUsers": &graphql.Field{
+		Type:        graphql.NewList(accountType),
+		Description: "Get all users",
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			users := getUsers(rpcServices.AuthenticationService)
+			return users, nil
 		},
 	},
 }
 
-// func callUnaryEcho(client ecpb.EchoClient, message string) {
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 	defer cancel()
-// 	resp, err := client.UnaryEcho(ctx, &ecpb.EchoRequest{Message: message})
-// 	if err != nil {
-// 		log.Fatalf("client.UnaryEcho(_) = _, %v: ", err)
-// 	}
-// 	fmt.Println("UnaryEcho: ", resp.Message)
-// }
-
-func login(client authPb.AccountClient, phone string, pass string) {
+func login(client authPb.AccountClient, phone string, pass string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
 	resp, err := client.Login(ctx, &authPb.AccountRequest{PhoneNumber: phone, Password: pass})
 	if err != nil {
-		log.Fatalf("client.UnaryEcho(_) = _, %v: ", err)
+		log.Fatalf("client.login(_) = _, %v: ", err)
 	}
-	fmt.Println("token: ", resp.Token)
+
+	return resp.Token
+}
+
+func register(client authPb.AccountClient, phone string, pass string) string {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := client.Register(ctx, &authPb.AccountRequest{PhoneNumber: phone, Password: pass})
+	if err != nil {
+		log.Fatalf("client.register(_) = _, %v: ", err)
+	}
+
+	return resp.Msg
+}
+
+func getUsers(client authPb.AccountClient) []*authPb.User {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := client.GetUsers(ctx, &authPb.Empty{})
+	if err != nil {
+		log.Fatalf("client.GetUsers(_) = _, %v: ", err)
+	}
+
+	return resp.Users
 }

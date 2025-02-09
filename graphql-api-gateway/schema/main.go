@@ -8,6 +8,7 @@ var rootQuery = graphql.NewObject(graphql.ObjectConfig{
 		"todo":     todoQuery["todo"],
 		"lastTodo": todoQuery["lastTodo"],
 		"todoList": todoQuery["todoList"],
+		"getUsers": authQuery["getUsers"],
 	},
 })
 
@@ -17,6 +18,7 @@ var rootMutation = graphql.NewObject(graphql.ObjectConfig{
 		"createTodo": todoMutation["createTodo"],
 		"updateTodo": todoMutation["updateTodo"],
 		"signIn":     authMutation["signIn"],
+		"signUp":     authMutation["signUp"],
 	},
 })
 

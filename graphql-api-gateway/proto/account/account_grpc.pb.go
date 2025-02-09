@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.12.4
-// source: account/account.proto
+// source: proto/account/account.proto
 
 package account
 
@@ -19,7 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Account_Login_FullMethodName = "/grpc.account.Account/Login"
+	Account_Login_FullMethodName    = "/account.Account/Login"
+	Account_Register_FullMethodName = "/account.Account/Register"
+	Account_GetUsers_FullMethodName = "/account.Account/GetUsers"
 )
 
 // AccountClient is the client API for Account service.
@@ -27,6 +29,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AccountClient interface {
 	Login(ctx context.Context, in *AccountRequest, opts ...grpc.CallOption) (*AccountResponse, error)
+	Register(ctx context.Context, in *AccountRequest, opts ...grpc.CallOption) (*Msg, error)
+	GetUsers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*UsersResponse, error)
 }
 
 type accountClient struct {
@@ -47,11 +51,33 @@ func (c *accountClient) Login(ctx context.Context, in *AccountRequest, opts ...g
 	return out, nil
 }
 
+func (c *accountClient) Register(ctx context.Context, in *AccountRequest, opts ...grpc.CallOption) (*Msg, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Msg)
+	err := c.cc.Invoke(ctx, Account_Register_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountClient) GetUsers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*UsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UsersResponse)
+	err := c.cc.Invoke(ctx, Account_GetUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AccountServer is the server API for Account service.
 // All implementations must embed UnimplementedAccountServer
 // for forward compatibility.
 type AccountServer interface {
 	Login(context.Context, *AccountRequest) (*AccountResponse, error)
+	Register(context.Context, *AccountRequest) (*Msg, error)
+	GetUsers(context.Context, *Empty) (*UsersResponse, error)
 	mustEmbedUnimplementedAccountServer()
 }
 
@@ -64,6 +90,12 @@ type UnimplementedAccountServer struct{}
 
 func (UnimplementedAccountServer) Login(context.Context, *AccountRequest) (*AccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedAccountServer) Register(context.Context, *AccountRequest) (*Msg, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedAccountServer) GetUsers(context.Context, *Empty) (*UsersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUsers not implemented")
 }
 func (UnimplementedAccountServer) mustEmbedUnimplementedAccountServer() {}
 func (UnimplementedAccountServer) testEmbeddedByValue()                 {}
@@ -104,18 +136,62 @@ func _Account_Login_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Account_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServer).Register(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Account_Register_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServer).Register(ctx, req.(*AccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Account_GetUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServer).GetUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Account_GetUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServer).GetUsers(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Account_ServiceDesc is the grpc.ServiceDesc for Account service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Account_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "grpc.account.Account",
+	ServiceName: "account.Account",
 	HandlerType: (*AccountServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Login",
 			Handler:    _Account_Login_Handler,
 		},
+		{
+			MethodName: "Register",
+			Handler:    _Account_Register_Handler,
+		},
+		{
+			MethodName: "GetUsers",
+			Handler:    _Account_GetUsers_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "account/account.proto",
+	Metadata: "proto/account/account.proto",
 }

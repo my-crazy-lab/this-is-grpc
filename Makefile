@@ -1,9 +1,8 @@
-.PHONY: proto
-
 PROTO_DIR=proto
-OUT_DIR=.
+OUT_DIR=graphql-api-gateway
+# OUT_DIR=authentication
 
-proto:
+generate:
 	protoc --go_out=$(OUT_DIR) --go_opt=paths=source_relative \
 	       --go-grpc_out=$(OUT_DIR) --go-grpc_opt=paths=source_relative \
-	       $(PROTO_DIR)/*.proto
+	       $(PROTO_DIR)/account/account.proto
