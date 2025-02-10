@@ -2,11 +2,14 @@ package schema
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
 	"github.com/graphql-go/graphql"
-	authPb "github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway/proto/auth"
+	authPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/auth"
+	userPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/user"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway/rpcServices"
 )
@@ -96,9 +99,11 @@ var authQuery = graphql.Fields{
 		Type:        graphql.NewList(userType),
 		Description: "Get all users",
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			ctx := p.Context.(context.Context)
-
-			users := getUsers(ctx, rpcServices.AuthenticationService)
+			ctx := p.Context
+			users, err := getUsers(ctx, rpcServices.AuthenticationService)
+			if err != nil {
+				log.Fatalf("get users error %v: ", err)
+			}
 			return users, nil
 		},
 	},
@@ -128,14 +133,23 @@ func register(client authPb.AuthClient, phone string, pass string) string {
 	return resp.Msg
 }
 
-func getUsers(ctx context.Context, client authPb.AuthClient) []*authPb.User {
+func getUsers(ctx context.Context, client authPb.AuthClient) ([]*userPb.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
+
+	token, ok := ctx.Value("token").(string)
+	if !ok || token == "" {
+		return nil, errors.New("unauthorized: missing token")
+	}
+
+	// Create gRPC metadata with the token
+	md := metadata.New(map[string]string{"user-authorization": token})
+	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	resp, err := client.GetUsers(ctx, &authPb.GetUsersRequest{})
 	if err != nil {
 		log.Fatalf("client.GetUsers(_) = _, %v: ", err)
 	}
 
-	return resp.Users
+	return resp.Users, nil
 }

@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/graphql-go/graphql"
-	authPb "github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway/proto/auth"
+	authPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/auth"
+	productPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/product"
 
 	"github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway/rpcServices"
 )
@@ -116,11 +117,11 @@ var productMutation = graphql.Fields{
 	"": &graphql.Field{},
 }
 
-func getProducts(ctx context.Context, client authPb.AuthClient) *authPb.GetProductsResponse {
+func getProducts(ctx context.Context, client authPb.AuthClient) *productPb.GetProductsResponse {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	resp, err := client.GetProducts(ctx, &authPb.GetProductsRequest{})
+	resp, err := client.GetProducts(ctx, &productPb.GetProductsRequest{})
 	if err != nil {
 		log.Fatalf("client.GetProducts(_) = _, %v: ", err)
 	}
@@ -128,11 +129,11 @@ func getProducts(ctx context.Context, client authPb.AuthClient) *authPb.GetProdu
 	return resp
 }
 
-func getReviews(ctx context.Context, client authPb.AuthClient) *authPb.GetReviewsResponse {
+func getReviews(ctx context.Context, client authPb.AuthClient) *productPb.GetReviewsResponse {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	resp, err := client.GetReviews(ctx, &authPb.GetReviewsRequest{})
+	resp, err := client.GetReviews(ctx, &productPb.GetReviewsRequest{})
 	if err != nil {
 		log.Fatalf("client.GetReviews(_) = _, %v: ", err)
 	}

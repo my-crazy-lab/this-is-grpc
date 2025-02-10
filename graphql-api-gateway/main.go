@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/graphql-go/graphql"
 	"github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway/rpcServices"
@@ -35,8 +37,19 @@ func main() {
 			fmt.Printf("could not declare graphql schema: %s", err)
 		}
 
+		ctx := req.Context()
+		// Extract the Authorization header
+		authHeader := req.Header.Get("Authorization")
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				token := parts[1]
+				ctx = context.WithValue(ctx, "token", token)
+			}
+		}
+
 		result := graphql.Do(graphql.Params{
-			Context:        req.Context(),
+			Context:        ctx,
 			Schema:         graphqlSchema,
 			RequestString:  p.Query,
 			VariableValues: p.Variables,
@@ -55,8 +68,8 @@ func main() {
 curl \
 -X POST \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer _token_" \
---data '{ "query": "{ getUsers { id phoneNumber password } }" }' \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
+--data '{ "query": "{ getUsers { id phoneNumber } }" }' \
 http://localhost:9090/graphql`)
 
 	fmt.Println("")

@@ -32,8 +32,8 @@ import (
 	"google.golang.org/grpc/examples/data"
 
 	"github.com/my-crazy-lab/this-is-grpc/authentication/pg"
-	authPb "github.com/my-crazy-lab/this-is-grpc/authentication/proto/account"
 	"github.com/my-crazy-lab/this-is-grpc/authentication/secure"
+	authPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/auth"
 
 	"github.com/my-crazy-lab/this-is-grpc/authentication/server"
 )
@@ -66,7 +66,7 @@ func main() {
 
 	s := grpc.NewServer(opts...)
 
-	authPb.RegisterAccountServer(s, server.NewAuthServer())
+	authPb.RegisterAuthServer(s, server.NewAuthServer())
 
 	fmt.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {

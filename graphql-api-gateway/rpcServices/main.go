@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	authPb "../proto/auth"
+	authPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/auth"
 
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"

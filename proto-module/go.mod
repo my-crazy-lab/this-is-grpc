@@ -1,6 +1,6 @@
 module github.com/my-crazy-lab/this-is-grpc/proto-module
 
-go 1.23.5
+go 1.23.6
 
 require (
 	google.golang.org/grpc v1.70.0
