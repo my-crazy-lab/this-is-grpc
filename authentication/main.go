@@ -21,19 +21,17 @@
 package main
 
 import (
-	"crypto/tls"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/examples/data"
 
 	"github.com/my-crazy-lab/this-is-grpc/authentication/pg"
-	"github.com/my-crazy-lab/this-is-grpc/authentication/secure"
+	client "github.com/my-crazy-lab/this-is-grpc/proto-module/client"
 	authPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/auth"
+	utils "github.com/my-crazy-lab/this-is-grpc/proto-module/utils"
 
 	"github.com/my-crazy-lab/this-is-grpc/authentication/server"
 )
@@ -46,23 +44,15 @@ func main() {
 	pg.InitDB()
 	defer pg.CloseDB()
 
+	client.NewProductClient()
+	defer client.ProductClientConnection.Close()
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	cert, err := tls.LoadX509KeyPair(data.Path("x509/server_cert.pem"), data.Path("x509/server_key.pem"))
-	if err != nil {
-		log.Fatalf("failed to load key pair: %s", err)
-	}
-	opts := []grpc.ServerOption{
-		// The following grpc.ServerOption adds an interceptor for all unary
-		// RPCs. To configure an interceptor for streaming RPCs, see:
-		// https://godoc.org/google.golang.org/grpc#StreamInterceptor
-		grpc.UnaryInterceptor(secure.EnsureValidToken),
-		// Enable TLS for all incoming connections.
-		grpc.Creds(credentials.NewServerTLSFromCert(&cert)),
-	}
+	opts := utils.GetOptsServer()
 
 	s := grpc.NewServer(opts...)
 

@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	"github.com/graphql-go/graphql"
-	"github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway/rpcServices"
+	client "github.com/my-crazy-lab/this-is-grpc/proto-module/client"
+
 	"github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway/schema"
 )
 
@@ -19,8 +20,8 @@ type postData struct {
 }
 
 func main() {
-	rpcServices.NewAuthenticationService()
-	defer rpcServices.AuthClientConnection.Close()
+	client.NewAuthenticationClient()
+	defer client.AuthClientConnection.Close()
 
 	http.HandleFunc("/graphql", func(w http.ResponseWriter, req *http.Request) {
 		var p postData

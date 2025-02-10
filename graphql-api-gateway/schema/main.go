@@ -14,7 +14,9 @@ var RootQuery = graphql.NewObject(graphql.ObjectConfig{
 var RootMutation = graphql.NewObject(graphql.ObjectConfig{
 	Name: "RootMutation",
 	Fields: graphql.Fields{
-		"signIn": authMutation["signIn"],
-		"signUp": authMutation["signUp"],
+		"signIn":           authMutation["signIn"],
+		"signUp":           authMutation["signUp"],
+		"CreateProduct":    productMutation["CreateProduct"],
+		"CreateCategories": productMutation["CreateCategories"],
 	},
 })

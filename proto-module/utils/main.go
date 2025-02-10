@@ -1,10 +1,8 @@
-package rpcServices
+package utils
 
 import (
-	"flag"
+	"crypto/tls"
 	"log"
-
-	authPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/auth"
 
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
@@ -12,12 +10,6 @@ import (
 	"google.golang.org/grpc/credentials/oauth"
 	"google.golang.org/grpc/examples/data"
 )
-
-// avoid services interface establish multi times
-var AuthenticationService authPb.AuthClient
-var AuthClientConnection *grpc.ClientConn
-
-var addrAuthService = flag.String("addrAuthService", "localhost:50051", "the address to connect to")
 
 // fetchToken simulates a token lookup and omits the details of proper token
 // acquisition. For examples of how to acquire an OAuth2 token, see:
@@ -28,17 +20,13 @@ func fetchToken() *oauth2.Token {
 	}
 }
 
-func NewAuthenticationService() {
-	if AuthenticationService != nil {
-		return
-	}
-
-	// Set up the credentials for the connection.
-	perRPC := oauth.TokenSource{TokenSource: oauth2.StaticTokenSource(fetchToken())}
+func GetOptsClient() []grpc.DialOption {
 	creds, err := credentials.NewClientTLSFromFile(data.Path("x509/ca_cert.pem"), "x.test.example.com")
 	if err != nil {
 		log.Fatalf("failed to load credentials: %v", err)
 	}
+
+	perRPC := oauth.TokenSource{TokenSource: oauth2.StaticTokenSource(fetchToken())}
 	opts := []grpc.DialOption{
 		// In addition to the following grpc.DialOption, callers may also use
 		// the grpc.CallOption grpc.PerRPCCredentials with the RPC invocation
@@ -50,12 +38,22 @@ func NewAuthenticationService() {
 		grpc.WithTransportCredentials(creds),
 	}
 
-	conn, err := grpc.NewClient(*addrAuthService, opts...)
+	return opts
+}
+
+func GetOptsServer() []grpc.ServerOption {
+	cert, err := tls.LoadX509KeyPair(data.Path("x509/server_cert.pem"), data.Path("x509/server_key.pem"))
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		log.Fatalf("failed to load key pair: %s", err)
+	}
+	opts := []grpc.ServerOption{
+		// The following grpc.ServerOption adds an interceptor for all unary
+		// RPCs. To configure an interceptor for streaming RPCs, see:
+		// https://godoc.org/google.golang.org/grpc#StreamInterceptor
+		grpc.UnaryInterceptor(ensureValidToken),
+		// Enable TLS for all incoming connections.
+		grpc.Creds(credentials.NewServerTLSFromCert(&cert)),
 	}
 
-	AuthClientConnection = conn
-	AuthenticationService = authPb.NewAuthClient(conn)
-
+	return opts
 }

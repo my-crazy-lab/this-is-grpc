@@ -2,14 +2,16 @@ package schema
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
 	"github.com/graphql-go/graphql"
 	authPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/auth"
 	productPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/product"
+	"google.golang.org/grpc/metadata"
 
-	"github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway/rpcServices"
+	client "github.com/my-crazy-lab/this-is-grpc/proto-module/client"
 )
 
 var categoryItemType = graphql.NewObject(graphql.ObjectConfig{
@@ -97,7 +99,7 @@ var productQuery = graphql.Fields{
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			ctx := p.Context.(context.Context)
 
-			users := getProducts(ctx, rpcServices.AuthenticationService)
+			users := getProducts(ctx, client.AuthenticationService)
 			return users, nil
 		},
 	},
@@ -107,14 +109,91 @@ var productQuery = graphql.Fields{
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			ctx := p.Context.(context.Context)
 
-			users := getReviews(ctx, rpcServices.AuthenticationService)
+			users := getReviews(ctx, client.AuthenticationService)
 			return users, nil
 		},
 	},
 }
 
+var test = graphql.NewObject(graphql.ObjectConfig{
+	Name: "Test",
+	Fields: graphql.Fields{
+		"id": &graphql.Field{
+			Type: graphql.Int,
+		},
+	},
+})
+
 var productMutation = graphql.Fields{
-	"": &graphql.Field{},
+	"CreateProduct": &graphql.Field{
+		Type:        productItemType,
+		Description: "Create new product",
+		Args: graphql.FieldConfigArgument{
+			"name": &graphql.ArgumentConfig{
+				Type: graphql.String,
+			},
+			"description": &graphql.ArgumentConfig{
+				Type: graphql.String,
+			},
+			"price": &graphql.ArgumentConfig{
+				Type: graphql.Int,
+			},
+			"quantity": &graphql.ArgumentConfig{
+				Type: graphql.Int,
+			},
+			"categories": &graphql.ArgumentConfig{
+				Type: graphql.NewList(graphql.Int),
+			},
+		},
+		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+			name, _ := params.Args["name"].(string)
+			description, _ := params.Args["description"].(string)
+			price, _ := params.Args["price"].(float64)
+			quantity, _ := params.Args["quantity"].(int32)
+
+			rawCategories, _ := params.Args["categories"].([]interface{})
+			categories := make([]int32, len(rawCategories))
+
+			for i, v := range rawCategories {
+				categories[i], _ = v.(int32) // Convert interface{} to int
+			}
+
+			ctx := params.Context
+
+			res := createProduct(ctx, client.AuthenticationService, &productPb.CreateProductRequest{
+				Name: name, Description: description, Price: price, Quantity: quantity, CategoryIds: categories,
+			})
+
+			return res, nil
+		},
+	},
+	"CreateCategories": &graphql.Field{
+		Type:        test,
+		Description: "Create new categories",
+		Args: graphql.FieldConfigArgument{
+			"name": &graphql.ArgumentConfig{
+				Type: graphql.String,
+			},
+			"description": &graphql.ArgumentConfig{
+				Type: graphql.String,
+			},
+		},
+		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+			name, _ := params.Args["name"].(string)
+			description, _ := params.Args["description"].(string)
+
+			ctx := params.Context
+
+			res, err := createCategories(ctx, client.AuthenticationService, &productPb.CreateCategoriesRequest{
+				Name: name, Description: description,
+			})
+			if err != nil {
+				log.Fatalf("AuthenticationClient.CreateCategories(_) = _, %v: ", err)
+			}
+
+			return res, nil
+		},
+	},
 }
 
 func getProducts(ctx context.Context, client authPb.AuthClient) *productPb.GetProductsResponse {
@@ -123,7 +202,7 @@ func getProducts(ctx context.Context, client authPb.AuthClient) *productPb.GetPr
 
 	resp, err := client.GetProducts(ctx, &productPb.GetProductsRequest{})
 	if err != nil {
-		log.Fatalf("client.GetProducts(_) = _, %v: ", err)
+		log.Fatalf("AuthenticationClient.GetProducts(_) = _, %v: ", err)
 	}
 
 	return resp
@@ -135,8 +214,41 @@ func getReviews(ctx context.Context, client authPb.AuthClient) *productPb.GetRev
 
 	resp, err := client.GetReviews(ctx, &productPb.GetReviewsRequest{})
 	if err != nil {
-		log.Fatalf("client.GetReviews(_) = _, %v: ", err)
+		log.Fatalf("AuthenticationClient.GetReviews(_) = _, %v: ", err)
 	}
 
 	return resp
+}
+
+func createProduct(ctx context.Context, client authPb.AuthClient, params *productPb.CreateProductRequest) *productPb.CreateProductResponse {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	resp, err := client.CreateProduct(ctx, params)
+	if err != nil {
+		log.Fatalf("AuthenticationClient.CreateProduct(_) = _, %v: ", err)
+	}
+
+	return resp
+}
+
+func createCategories(ctx context.Context, client authPb.AuthClient, params *productPb.CreateCategoriesRequest) (*productPb.CreateCategoriesResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	token, ok := ctx.Value("token").(string)
+	if !ok || token == "" {
+		return nil, errors.New("unauthorized: missing token")
+	}
+
+	// Create gRPC metadata with the token
+	md := metadata.New(map[string]string{"user-authorization": token})
+	ctx = metadata.NewOutgoingContext(ctx, md)
+
+	resp, err := client.CreateCategories(ctx, params)
+	if err != nil {
+		log.Fatalf("AuthenticationClient.CreateCategories(_) = _, %v: ", err)
+	}
+
+	return resp, nil
 }

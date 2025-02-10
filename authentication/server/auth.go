@@ -12,10 +12,6 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type authServer struct {
-	authPb.UnimplementedAuthServer
-}
-
 func (s *authServer) Login(_ context.Context, req *authPb.LoginRequest) (*authPb.LoginResponse, error) {
 	user, err := pg.GetUserByPhone(req.PhoneNumber)
 	if err != nil {
@@ -64,7 +60,7 @@ func (s *authServer) GetUsers(ctx context.Context, _ *authPb.GetUsersRequest) (*
 	if !exists || len(authHeader) == 0 {
 		return nil, errors.New("unauthorized: missing token")
 	}
-	
+
 	token := authHeader[0]
 	_, err := pg.VerifyJWT(token)
 	if err != nil {
@@ -85,8 +81,4 @@ func (s *authServer) GetUsers(ctx context.Context, _ *authPb.GetUsersRequest) (*
 	}
 
 	return &authPb.GetUsersResponse{Users: userResponses}, nil
-}
-
-func NewAuthServer() authPb.AuthServer {
-	return &authServer{}
 }

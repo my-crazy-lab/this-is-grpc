@@ -11,7 +11,7 @@ import (
 	userPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/user"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway/rpcServices"
+	client "github.com/my-crazy-lab/this-is-grpc/proto-module/client"
 )
 
 type Account struct {
@@ -65,7 +65,7 @@ var authMutation = graphql.Fields{
 			phoneNumber, _ := params.Args["phoneNumber"].(string)
 			password, _ := params.Args["password"].(string)
 
-			token := login(rpcServices.AuthenticationService, phoneNumber, password)
+			token := login(client.AuthenticationService, phoneNumber, password)
 
 			return LoginResponse{token}, nil
 		},
@@ -86,7 +86,7 @@ var authMutation = graphql.Fields{
 			password, okPass := params.Args["password"].(string)
 
 			if okPhone && okPass {
-				msg := register(rpcServices.AuthenticationService, phoneNumber, password)
+				msg := register(client.AuthenticationService, &authPb.RegisterRequest{PhoneNumber: phoneNumber, Password: password})
 				return msg, nil
 			}
 			return "", nil
@@ -100,7 +100,7 @@ var authQuery = graphql.Fields{
 		Description: "Get all users",
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			ctx := p.Context
-			users, err := getUsers(ctx, rpcServices.AuthenticationService)
+			users, err := getUsers(ctx, client.AuthenticationService)
 			if err != nil {
 				log.Fatalf("get users error %v: ", err)
 			}
@@ -121,11 +121,11 @@ func login(client authPb.AuthClient, phone string, pass string) string {
 	return resp.Token
 }
 
-func register(client authPb.AuthClient, phone string, pass string) string {
+func register(client authPb.AuthClient, params *authPb.RegisterRequest) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	resp, err := client.Register(ctx, &authPb.RegisterRequest{PhoneNumber: phone, Password: pass})
+	resp, err := client.Register(ctx, params)
 	if err != nil {
 		log.Fatalf("client.register(_) = _, %v: ", err)
 	}
