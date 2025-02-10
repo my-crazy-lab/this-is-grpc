@@ -1,4 +1,4 @@
-module github.com/my-crazy-lab/this-is-grpc/graph-api-gateway
+module github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway
 
 go 1.23.5
 

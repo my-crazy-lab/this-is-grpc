@@ -33,7 +33,6 @@ import (
 
 	"github.com/my-crazy-lab/this-is-grpc/authentication/pg"
 	authPb "github.com/my-crazy-lab/this-is-grpc/authentication/proto/account"
-	pb "github.com/my-crazy-lab/this-is-grpc/authentication/proto/echo"
 	"github.com/my-crazy-lab/this-is-grpc/authentication/secure"
 
 	"github.com/my-crazy-lab/this-is-grpc/authentication/server"
@@ -67,7 +66,6 @@ func main() {
 
 	s := grpc.NewServer(opts...)
 
-	pb.RegisterEchoServer(s, server.NewEchoServer())
 	authPb.RegisterAccountServer(s, server.NewAuthServer())
 
 	fmt.Printf("server listening at %v", lis.Addr())

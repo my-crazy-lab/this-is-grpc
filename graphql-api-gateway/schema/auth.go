@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/graphql-go/graphql"
-	authPb "github.com/my-crazy-lab/this-is-grpc/graph-api-gateway/proto/account"
+	authPb "github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway/proto/auth"
 
-	"github.com/my-crazy-lab/this-is-grpc/graph-api-gateway/rpcServices"
+	"github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway/rpcServices"
 )
 
 type Account struct {
@@ -16,9 +16,9 @@ type Account struct {
 	Password    string `json:"password"`
 }
 
-type User struct {
-	Id       string `json:"id"`
-	Username string `json:"username"`
+type UserType struct {
+	Id          string `json:"id"`
+	PhoneNumber string `json:"phoneNumber"`
 }
 
 type LoginResponse struct {
@@ -34,13 +34,10 @@ var authType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
-var accountType = graphql.NewObject(graphql.ObjectConfig{
+var userType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Account",
 	Fields: graphql.Fields{
 		"phoneNumber": &graphql.Field{
-			Type: graphql.String,
-		},
-		"password": &graphql.Field{
 			Type: graphql.String,
 		},
 		"id": &graphql.Field{
@@ -82,31 +79,36 @@ var authMutation = graphql.Fields{
 			},
 		},
 		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
-			phoneNumber, _ := params.Args["phoneNumber"].(string)
-			password, _ := params.Args["password"].(string)
+			phoneNumber, okPhone := params.Args["phoneNumber"].(string)
+			password, okPass := params.Args["password"].(string)
 
-			msg := register(rpcServices.AuthenticationService, phoneNumber, password)
-			return msg, nil
+			if okPhone && okPass {
+				msg := register(rpcServices.AuthenticationService, phoneNumber, password)
+				return msg, nil
+			}
+			return "", nil
 		},
 	},
 }
 
 var authQuery = graphql.Fields{
 	"getUsers": &graphql.Field{
-		Type:        graphql.NewList(accountType),
+		Type:        graphql.NewList(userType),
 		Description: "Get all users",
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			users := getUsers(rpcServices.AuthenticationService)
+			ctx := p.Context.(context.Context)
+
+			users := getUsers(ctx, rpcServices.AuthenticationService)
 			return users, nil
 		},
 	},
 }
 
-func login(client authPb.AccountClient, phone string, pass string) string {
+func login(client authPb.AuthClient, phone string, pass string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	resp, err := client.Login(ctx, &authPb.AccountRequest{PhoneNumber: phone, Password: pass})
+	resp, err := client.Login(ctx, &authPb.LoginRequest{PhoneNumber: phone, Password: pass})
 	if err != nil {
 		log.Fatalf("client.login(_) = _, %v: ", err)
 	}
@@ -114,11 +116,11 @@ func login(client authPb.AccountClient, phone string, pass string) string {
 	return resp.Token
 }
 
-func register(client authPb.AccountClient, phone string, pass string) string {
+func register(client authPb.AuthClient, phone string, pass string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	resp, err := client.Register(ctx, &authPb.AccountRequest{PhoneNumber: phone, Password: pass})
+	resp, err := client.Register(ctx, &authPb.RegisterRequest{PhoneNumber: phone, Password: pass})
 	if err != nil {
 		log.Fatalf("client.register(_) = _, %v: ", err)
 	}
@@ -126,11 +128,11 @@ func register(client authPb.AccountClient, phone string, pass string) string {
 	return resp.Msg
 }
 
-func getUsers(client authPb.AccountClient) []*authPb.User {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func getUsers(ctx context.Context, client authPb.AuthClient) []*authPb.User {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	resp, err := client.GetUsers(ctx, &authPb.Empty{})
+	resp, err := client.GetUsers(ctx, &authPb.GetUsersRequest{})
 	if err != nil {
 		log.Fatalf("client.GetUsers(_) = _, %v: ", err)
 	}

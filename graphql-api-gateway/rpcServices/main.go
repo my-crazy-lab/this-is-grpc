@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	authPb "github.com/my-crazy-lab/this-is-grpc/graph-api-gateway/proto/account"
+	authPb "../proto/auth"
 
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
@@ -14,10 +14,19 @@ import (
 )
 
 // avoid services interface establish multi times
-var AuthenticationService authPb.AccountClient
-var ClientConnection *grpc.ClientConn
+var AuthenticationService authPb.AuthClient
+var AuthClientConnection *grpc.ClientConn
 
-var addr = flag.String("addr", "localhost:50051", "the address to connect to")
+var addrAuthService = flag.String("addrAuthService", "localhost:50051", "the address to connect to")
+
+// fetchToken simulates a token lookup and omits the details of proper token
+// acquisition. For examples of how to acquire an OAuth2 token, see:
+// https://godoc.org/golang.org/x/oauth2
+func fetchToken() *oauth2.Token {
+	return &oauth2.Token{
+		AccessToken: "some-secret-token",
+	}
+}
 
 func NewAuthenticationService() {
 	if AuthenticationService != nil {
@@ -41,20 +50,12 @@ func NewAuthenticationService() {
 		grpc.WithTransportCredentials(creds),
 	}
 
-	conn, err := grpc.NewClient(*addr, opts...)
+	conn, err := grpc.NewClient(*addrAuthService, opts...)
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 
-	ClientConnection = conn
-	AuthenticationService = authPb.NewAccountClient(conn)
-}
+	AuthClientConnection = conn
+	AuthenticationService = authPb.NewAuthClient(conn)
 
-// fetchToken simulates a token lookup and omits the details of proper token
-// acquisition. For examples of how to acquire an OAuth2 token, see:
-// https://godoc.org/golang.org/x/oauth2
-func fetchToken() *oauth2.Token {
-	return &oauth2.Token{
-		AccessToken: "some-secret-token",
-	}
 }

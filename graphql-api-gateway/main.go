@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/graphql-go/graphql"
-	"github.com/my-crazy-lab/this-is-grpc/graph-api-gateway/rpcServices"
-	"github.com/my-crazy-lab/this-is-grpc/graph-api-gateway/schema"
+	"github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway/rpcServices"
+	"github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway/schema"
 )
 
 type postData struct {
@@ -18,7 +18,7 @@ type postData struct {
 
 func main() {
 	rpcServices.NewAuthenticationService()
-	defer rpcServices.ClientConnection.Close()
+	defer rpcServices.AuthClientConnection.Close()
 
 	http.HandleFunc("/graphql", func(w http.ResponseWriter, req *http.Request) {
 		var p postData
@@ -26,9 +26,18 @@ func main() {
 			w.WriteHeader(400)
 			return
 		}
+
+		graphqlSchema, err := graphql.NewSchema(graphql.SchemaConfig{
+			Query:    schema.RootQuery,
+			Mutation: schema.RootMutation,
+		})
+		if err != nil {
+			fmt.Printf("could not declare graphql schema: %s", err)
+		}
+
 		result := graphql.Do(graphql.Params{
 			Context:        req.Context(),
-			Schema:         schema.RootSchema,
+			Schema:         graphqlSchema,
 			RequestString:  p.Query,
 			VariableValues: p.Variables,
 			OperationName:  p.Operation,
@@ -46,34 +55,8 @@ func main() {
 curl \
 -X POST \
 -H "Content-Type: application/json" \
+-H "Authorization: Bearer _token_" \
 --data '{ "query": "{ getUsers { id phoneNumber password } }" }' \
-http://localhost:9090/graphql`)
-
-	fmt.Println("")
-
-	fmt.Println(`Create new todo:
-curl \
--X POST \
--H "Content-Type: application/json" \
---data '{ "query": "mutation { createTodo(text:\"My New todo\") { id text done } }" }' \
-http://localhost:9090/graphql`)
-
-	fmt.Println("")
-
-	fmt.Println(`Update todo:
-curl \
--X POST \
--H "Content-Type: application/json" \
---data '{ "query": "mutation { updateTodo(id:\"a\", done: true) { id text done } }" }' \
-http://localhost:9090/graphql`)
-
-	fmt.Println("")
-
-	fmt.Println(`Load todo list:
-curl \
--X POST \
--H "Content-Type: application/json" \
---data '{ "query": "{ todoList { id text done } }" }' \
 http://localhost:9090/graphql`)
 
 	fmt.Println("")
@@ -82,6 +65,7 @@ http://localhost:9090/graphql`)
 curl \
 -X POST \
 -H "Content-Type: application/json" \
+-H "Authorization: Bearer _token_" \
 --data '{ "query": "mutation { signIn(phoneNumber:\"123456\",password:\"hihihi\") { token } }" }' \
 http://localhost:9090/graphql`)
 
@@ -91,6 +75,7 @@ http://localhost:9090/graphql`)
 curl \
 -X POST \
 -H "Content-Type: application/json" \
+-H "Authorization: Bearer _token_" \
 --data '{ "query": "mutation { signUp(phoneNumber:\"123456\", password:\"hihihi\") { token } }" }' \
 http://localhost:9090/graphql`)
 

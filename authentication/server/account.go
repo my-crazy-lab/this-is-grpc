@@ -50,7 +50,17 @@ func (s *authServer) Register(_ context.Context, req *authPb.AccountRequest) (*a
 	return &authPb.Msg{Msg: "register successful"}, nil
 }
 
-func (s *authServer) GetUsers(_ context.Context, _ *authPb.Empty) (*authPb.UsersResponse, error) {
+func (s *authServer) GetUsers(ctx context.Context, _ *authPb.Empty) (*authPb.UsersResponse, error) {
+	token, ok := ctx.Value("token").(string)
+	if !ok {
+		return nil, fmt.Errorf("unauthorized access: token not found in context")
+	}
+
+	_, err := pg.VerifyJWT(token)
+	if err != nil {
+		return nil, fmt.Errorf("invalid token: %v", err)
+	}
+
 	users, err := pg.GetUsers()
 	if err != nil {
 		return nil, err

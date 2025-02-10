@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+import "proto/product/product.proto";  
+import "proto/user/user.proto";  
+
+option go_package = "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/auth";
+
+package auth;
+
+message LoginRequest {
+  string phoneNumber = 1;
+  string password = 2;
+}
+
+message RegisterRequest {
+  string phoneNumber = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+}
+
+message RegisterResponse {
+string msg = 1;
+}
+
+message GetUsersRequest {}
+
+message GetUsersResponse{
+  repeated user.User users = 1;
+}
+
+service Auth {
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+  rpc Register(RegisterRequest) returns (RegisterResponse) {}
+  rpc GetUsers(GetUsersRequest) returns (GetUsersResponse){}
+  
+  rpc CreateProduct(product.CreateProductRequest) returns (product.CreateProductResponse) {}
+  rpc CreateCategories(product.CreateCategoriesRequest) returns (product.CreateCategoriesResponse) {}
+  rpc GetProducts(product.GetProductsRequest) returns (product.GetProductsResponse){}
+  rpc CreateReview(product.CreateReviewRequest) returns (product.CreateReviewResponse){}
+  rpc GetReviews(product.GetReviewsRequest) returns (product.GetReviewsResponse){}
+}

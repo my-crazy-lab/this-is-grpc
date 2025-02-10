@@ -60,11 +60,27 @@ func GenerateJWT(userID int) (string, error) {
 		},
 	}
 
-	// 🔹 Convert secret to []byte
+	// Convert secret to []byte
 	secretKey := []byte(getJwtSecret())
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(secretKey) // ✅ Correct: Using []byte
+	return token.SignedString(secretKey)
+}
+
+func VerifyJWT(tokenString string) (int, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(getJwtSecret()), nil // Use the same secret key for verification
+	})
+
+	if err != nil {
+		return 0, fmt.Errorf("invalid token: %v", err)
+	}
+
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims.UserID, nil
+	}
+
+	return 0, fmt.Errorf("invalid token claims")
 }
 
 func isErrNoRows(err error) bool {

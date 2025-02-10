@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+import "proto/user/user.proto";  
+import "google/protobuf/timestamp.proto";  
+
+option go_package = "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/product";
+
+package product;
+
+message Id {
+    int32 id = 1;  
+}
+
+message Pagination {
+    int32 page_size = 1;
+    int32 page_index = 2;
+    int32 limit = 3;
+}
+
+message ProductItem {
+    int32 id = 1;
+    string name = 2;
+    string description = 3;
+    double price = 4;
+    google.protobuf.Timestamp created_at = 5;  
+    google.protobuf.Timestamp updated_at = 6;  
+    repeated Category categories = 7;
+    int32 quantity = 8;
+}
+
+message CreateProductRequest {
+    string name = 1;
+    string description = 2;
+    double price = 3;  
+    repeated int32 category_ids = 4;  
+    int32 quantity = 5;
+}
+
+message CreateProductResponse{
+    Id id = 1;
+}
+
+message Category {  
+    int32 id = 1;  
+    string name = 2;  
+    string description = 3;  
+    google.protobuf.Timestamp created_at = 4;  
+    google.protobuf.Timestamp updated_at = 5;  
+}
+
+message ReviewItem {
+    int32 id = 1;
+    user.User user = 2;
+    int32 rating = 3;
+    string comment = 4;
+    google.protobuf.Timestamp created_at = 5;  
+    google.protobuf.Timestamp updated_at = 6;  
+}
+  
+message CreateCategoriesRequest{
+    string name = 1;  
+    string description = 2;
+}
+
+message CreateCategoriesResponse{
+    repeated Id ids = 1;
+}
+
+message GetProductsRequest {
+    Pagination pagination = 1;
+    repeated int32 category_ids = 2;  
+}
+
+message GetProductsResponse {
+    repeated ProductItem products = 1;
+    int32 total = 2;
+}
+
+message CreateReviewRequest{
+    int32 product_id = 1;
+    int32 user_id = 2;
+    int32 rating = 3;
+    string comment = 4;
+}
+
+message CreateReviewResponse {
+    int32 id = 1;
+}
+
+message GetReviewsRequest{
+
+}
+
+message GetReviewsResponse {
+    repeated ReviewItem reviews = 1;
+}
+
+service Product {
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse) {}
+  rpc CreateCategories(CreateCategoriesRequest) returns (CreateCategoriesResponse) {}
+  rpc GetProducts(GetProductsRequest) returns (GetProductsResponse){}
+  rpc CreateReview(CreateReviewRequest) returns (CreateReviewResponse){}
+  rpc GetReviews(GetReviewsRequest) returns (GetReviewsResponse){}
+}
