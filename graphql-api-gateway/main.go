@@ -65,32 +65,62 @@ func main() {
 
 	fmt.Println("")
 
-	fmt.Println(`Get users:
+	fmt.Println(`GET USERS:
 curl \
 -X POST \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
---data '{ "query": "{ getUsers { id phoneNumber } }" }' \
+--data '{ "query": "{ GetUsers { id phoneNumber } }" }' \
 http://localhost:9090/graphql`)
 
 	fmt.Println("")
 
-	fmt.Println(`Sign in:
+	fmt.Println(`SIGN IN:
 curl \
 -X POST \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer _token_" \
---data '{ "query": "mutation { signIn(phoneNumber:\"123456\",password:\"hihihi\") { token } }" }' \
+--data '{ "query": "mutation { SignIn(phoneNumber:\"123456\",password:\"hihihi\") { token } }" }' \
 http://localhost:9090/graphql`)
 
 	fmt.Println("")
 
-	fmt.Println(`Sign up:
+	fmt.Println(`REGISTER:
 curl \
 -X POST \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer _token_" \
---data '{ "query": "mutation { signUp(phoneNumber:\"123456\", password:\"hihihi\") { token } }" }' \
+--data '{ "query": "mutation { SignUp(phoneNumber:\"123456\", password:\"hihihi\") { token } }" }' \
+http://localhost:9090/graphql`)
+
+	fmt.Println("")
+
+	fmt.Println(`CREATE CATEGORIES:
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyODgyMzZ9.bAo1X9zqDqAqROIiBUxN5LCWse5czp6tOlCQCacgzAw" \
+--data '{ "query": "mutation { CreateCategories(name:\"must unique 2\", description:\"description hihihi\") { id } }" }' \
+http://localhost:9090/graphql`)
+
+	fmt.Println("")
+
+	fmt.Println(`GET CATEGORIES:
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyODgyMzZ9.bAo1X9zqDqAqROIiBUxN5LCWse5czp6tOlCQCacgzAw" \
+--data '{ "query": "{ GetCategories { id  name description created_at updated_at } }" }' \
+http://localhost:9090/graphql`)
+
+	fmt.Println("")
+
+	fmt.Println(`CREATE PRODUCT:
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyODgyMzZ9.bAo1X9zqDqAqROIiBUxN5LCWse5czp6tOlCQCacgzAw" \
+--data '{ "query": "mutation { CreateProduct(name:\"product 1\", description:\"description hihihi\", price: 200.5, quantity: 2, categories: [1,2]) { id } }" }' \
 http://localhost:9090/graphql`)
 
 	http.ListenAndServe(":9090", nil)

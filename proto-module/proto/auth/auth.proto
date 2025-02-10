@@ -38,6 +38,7 @@ service Auth {
   
   rpc CreateProduct(product.CreateProductRequest) returns (product.CreateProductResponse) {}
   rpc CreateCategories(product.CreateCategoriesRequest) returns (product.CreateCategoriesResponse) {}
+  rpc GetCategories(product.GetCategoriesRequest) returns (product.GetCategoriesResponse) {}
   rpc GetProducts(product.GetProductsRequest) returns (product.GetProductsResponse){}
   rpc CreateReview(product.CreateReviewRequest) returns (product.CreateReviewResponse){}
   rpc GetReviews(product.GetReviewsRequest) returns (product.GetReviewsResponse){}

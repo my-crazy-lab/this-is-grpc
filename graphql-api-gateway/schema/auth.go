@@ -50,7 +50,7 @@ var userType = graphql.NewObject(graphql.ObjectConfig{
 })
 
 var authMutation = graphql.Fields{
-	"signIn": &graphql.Field{
+	"SignIn": &graphql.Field{
 		Type:        authType,
 		Description: "User sign in",
 		Args: graphql.FieldConfigArgument{
@@ -70,7 +70,7 @@ var authMutation = graphql.Fields{
 			return LoginResponse{token}, nil
 		},
 	},
-	"signUp": &graphql.Field{
+	"SignUp": &graphql.Field{
 		Type:        authType,
 		Description: "User sign up",
 		Args: graphql.FieldConfigArgument{
@@ -95,7 +95,7 @@ var authMutation = graphql.Fields{
 }
 
 var authQuery = graphql.Fields{
-	"getUsers": &graphql.Field{
+	"GetUsers": &graphql.Field{
 		Type:        graphql.NewList(userType),
 		Description: "Get all users",
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {

@@ -12,6 +12,27 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+func verifyToken(ctx context.Context) (*pg.User, error) {
+	// Extract token from gRPC metadata
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("missing metadata")
+	}
+
+	authHeader, exists := md["user-authorization"]
+	if !exists || len(authHeader) == 0 {
+		return nil, errors.New("unauthorized: missing token")
+	}
+
+	token := authHeader[0]
+	userId, err := pg.VerifyJWT(token)
+	if err != nil {
+		return nil, fmt.Errorf("invalid token: %v", err)
+	}
+
+	return pg.GetUserById(userId)
+}
+
 func (s *authServer) Login(_ context.Context, req *authPb.LoginRequest) (*authPb.LoginResponse, error) {
 	user, err := pg.GetUserByPhone(req.PhoneNumber)
 	if err != nil {

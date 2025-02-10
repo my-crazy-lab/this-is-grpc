@@ -103,6 +103,21 @@ func GetUserByPhone(phone string) (*User, error) {
 	return &user, nil
 }
 
+func GetUserById(id int) (*User, error) {
+	query := "SELECT id, phone FROM users WHERE id = $1"
+	row := DBPool.QueryRow(context.Background(), query, id)
+	var user User
+	err := row.Scan(&user.ID, &user.PhoneNumber)
+	if err != nil {
+		if isErrNoRows(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get user by id: %w", err)
+	}
+
+	return &user, nil
+}
+
 func InsertNewUser(phone, password string) error {
 	passHashed, err := hashPassword(password)
 
@@ -117,7 +132,7 @@ func InsertNewUser(phone, password string) error {
 }
 
 func GetUsers() ([]User, error) {
-	query := "SELECT id, phone, password FROM users"
+	query := "SELECT id, phone FROM users"
 	rows, err := DBPool.Query(context.Background(), query)
 	if err != nil {
 		return nil, err
@@ -129,7 +144,7 @@ func GetUsers() ([]User, error) {
 
 	for rows.Next() {
 		var user User
-		if err := rows.Scan(&user.ID, &user.PhoneNumber, &user.Password); err != nil {
+		if err := rows.Scan(&user.ID, &user.PhoneNumber); err != nil {
 			return nil, err
 		}
 		users = append(users, user)

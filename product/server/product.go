@@ -7,6 +7,16 @@ import (
 	productPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/product"
 )
 
+func (s *productServer) CreateProduct(ctx context.Context, req *productPb.CreateProductRequest) (*productPb.CreateProductResponse, error) {
+	id, err := pg.CreateProduct(req.Name, req.Description, req.Price, &req.CategoryIds, req.Quantity)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &productPb.CreateProductResponse{Id: id}, nil
+}
+
 func (s *productServer) CreateCategories(ctx context.Context, req *productPb.CreateCategoriesRequest) (*productPb.CreateCategoriesResponse, error) {
 	err := pg.InsertCategories(req.Name, req.Description)
 	if err != nil {
@@ -14,4 +24,13 @@ func (s *productServer) CreateCategories(ctx context.Context, req *productPb.Cre
 	}
 
 	return &productPb.CreateCategoriesResponse{}, nil
+}
+
+func (s *productServer) GetCategories(ctx context.Context, req *productPb.GetCategoriesRequest) (*productPb.GetCategoriesResponse, error) {
+	categories, err := pg.GetCategories()
+	if err != nil {
+		return nil, err
+	}
+
+	return &productPb.GetCategoriesResponse{Categories: categories}, nil
 }

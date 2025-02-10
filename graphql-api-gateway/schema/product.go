@@ -3,6 +3,7 @@ package schema
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -49,7 +50,7 @@ var productItemType = graphql.NewObject(
 				Type: graphql.String,
 			},
 			"price": &graphql.Field{
-				Type: graphql.Int,
+				Type: graphql.Float,
 			},
 			"created_at": &graphql.Field{
 				Type: graphql.String,
@@ -99,8 +100,7 @@ var productQuery = graphql.Fields{
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			ctx := p.Context.(context.Context)
 
-			users := getProducts(ctx, client.AuthenticationService)
-			return users, nil
+			return getProducts(ctx, client.AuthenticationService), nil
 		},
 	},
 	"GetReviews": &graphql.Field{
@@ -109,20 +109,19 @@ var productQuery = graphql.Fields{
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			ctx := p.Context.(context.Context)
 
-			users := getReviews(ctx, client.AuthenticationService)
-			return users, nil
+			return getReviews(ctx, client.AuthenticationService), nil
+		},
+	},
+	"GetCategories": &graphql.Field{
+		Type:        graphql.NewList(categoryItemType),
+		Description: "Get all categories",
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			ctx := p.Context.(context.Context)
+
+			return getCategories(ctx, client.AuthenticationService).Categories, nil
 		},
 	},
 }
-
-var test = graphql.NewObject(graphql.ObjectConfig{
-	Name: "Test",
-	Fields: graphql.Fields{
-		"id": &graphql.Field{
-			Type: graphql.Int,
-		},
-	},
-})
 
 var productMutation = graphql.Fields{
 	"CreateProduct": &graphql.Field{
@@ -136,7 +135,7 @@ var productMutation = graphql.Fields{
 				Type: graphql.String,
 			},
 			"price": &graphql.ArgumentConfig{
-				Type: graphql.Int,
+				Type: graphql.Float,
 			},
 			"quantity": &graphql.ArgumentConfig{
 				Type: graphql.Int,
@@ -149,26 +148,48 @@ var productMutation = graphql.Fields{
 			name, _ := params.Args["name"].(string)
 			description, _ := params.Args["description"].(string)
 			price, _ := params.Args["price"].(float64)
-			quantity, _ := params.Args["quantity"].(int32)
+			quantity, _ := params.Args["quantity"].(int)
+
+			fmt.Printf("Type: %T\n", quantity)
+			fmt.Print(quantity)
+			fmt.Printf("\n aa")
+			fmt.Print(int32(quantity))
 
 			rawCategories, _ := params.Args["categories"].([]interface{})
+
 			categories := make([]int32, len(rawCategories))
 
 			for i, v := range rawCategories {
-				categories[i], _ = v.(int32) // Convert interface{} to int
+				fmt.Printf("Index %d: Type: %T, Value: %v\n", i, v, v) // Debugging
+
+				switch val := v.(type) {
+				case int:
+					categories[i] = int32(val) // Convert int to int32
+				case float64:
+					categories[i] = int32(val) // Convert float64 to int32 (for safety)
+				default:
+					fmt.Println("Warning: Unexpected category type:", v)
+				}
 			}
 
 			ctx := params.Context
 
 			res := createProduct(ctx, client.AuthenticationService, &productPb.CreateProductRequest{
-				Name: name, Description: description, Price: price, Quantity: quantity, CategoryIds: categories,
+				Name: name, Description: description, Price: price, Quantity: int32(quantity), CategoryIds: categories,
 			})
 
 			return res, nil
 		},
 	},
 	"CreateCategories": &graphql.Field{
-		Type:        test,
+		Type: graphql.NewObject(graphql.ObjectConfig{
+			Name: "CategoryIdInserted",
+			Fields: graphql.Fields{
+				"id": &graphql.Field{
+					Type: graphql.Int,
+				},
+			},
+		}),
 		Description: "Create new categories",
 		Args: graphql.FieldConfigArgument{
 			"name": &graphql.ArgumentConfig{
@@ -213,6 +234,18 @@ func getReviews(ctx context.Context, client authPb.AuthClient) *productPb.GetRev
 	defer cancel()
 
 	resp, err := client.GetReviews(ctx, &productPb.GetReviewsRequest{})
+	if err != nil {
+		log.Fatalf("AuthenticationClient.GetReviews(_) = _, %v: ", err)
+	}
+
+	return resp
+}
+
+func getCategories(ctx context.Context, client authPb.AuthClient) *productPb.GetCategoriesResponse {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	resp, err := client.GetCategories(ctx, &productPb.GetCategoriesRequest{})
 	if err != nil {
 		log.Fatalf("AuthenticationClient.GetReviews(_) = _, %v: ", err)
 	}
