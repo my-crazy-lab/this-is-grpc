@@ -109,6 +109,20 @@ var reviewType = graphql.NewObject(
 	})
 
 var productQuery = graphql.Fields{
+	"GetProduct": &graphql.Field{
+		Type:        productItemType,
+		Description: "Get product by ud",
+		Args: graphql.FieldConfigArgument{
+			"id": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.Int)},
+		},
+		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+			ctx := params.Context.(context.Context)
+
+			id := params.Args["id"].(int)
+
+			return getProductById(ctx, client.AuthenticationService, int32(id)), nil
+		},
+	},
 	"GetProducts": &graphql.Field{
 		Type:        getProductResponse,
 		Description: "Get all products",
@@ -195,11 +209,6 @@ var productMutation = graphql.Fields{
 			price, _ := params.Args["price"].(float64)
 			quantity, _ := params.Args["quantity"].(int)
 
-			fmt.Printf("Type: %T\n", quantity)
-			fmt.Print(quantity)
-			fmt.Printf("\n aa")
-			fmt.Print(int32(quantity))
-
 			rawCategories, _ := params.Args["categories"].([]interface{})
 
 			categories := make([]int32, len(rawCategories))
@@ -260,6 +269,18 @@ var productMutation = graphql.Fields{
 			return res, nil
 		},
 	},
+}
+
+func getProductById(ctx context.Context, client auth.AuthClient, id int32) *product.ProductItem {
+	ctx, cancel := context.WithTimeout(ctx, constants.TIMEOUT)
+	defer cancel()
+
+	resp, err := client.GetProduct(ctx, &product.GetProductRequest{ProductId: id})
+	if err != nil {
+		log.Fatalf("AuthenticationClient.GetProduct(_) = _, %v: ", err)
+	}
+
+	return resp
 }
 
 func getProducts(ctx context.Context, client auth.AuthClient, pageSize, pageIndex int) *product.GetProductsResponse {

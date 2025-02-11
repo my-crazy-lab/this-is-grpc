@@ -84,3 +84,17 @@ func (s *authServer) GetProducts(ctx context.Context, req *productPb.GetProducts
 
 	return resp, nil
 }
+
+func (s *authServer) GetProduct(ctx context.Context, req *productPb.GetProductRequest) (*productPb.ProductItem, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	verifyToken(ctx)
+
+	resp, err := client.ProductService.GetProduct(ctx, req)
+	if err != nil {
+		log.Fatalf("From ProductClient.GetProduct(_) = _, %v: ", err)
+	}
+
+	return resp, nil
+}

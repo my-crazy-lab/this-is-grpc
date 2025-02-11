@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func verifyToken(ctx context.Context) (*pg.User, error) {
+func verifyToken(ctx context.Context) (*userPb.User, error) {
 	// Extract token from gRPC metadata
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -30,7 +30,7 @@ func verifyToken(ctx context.Context) (*pg.User, error) {
 		return nil, fmt.Errorf("invalid token: %v", err)
 	}
 
-	return pg.GetUserById(userId)
+	return pg.GetUserById(int32(userId))
 }
 
 func (s *authServer) Login(_ context.Context, req *authPb.LoginRequest) (*authPb.LoginResponse, error) {
@@ -102,4 +102,30 @@ func (s *authServer) GetUsers(ctx context.Context, _ *authPb.GetUsersRequest) (*
 	}
 
 	return &authPb.GetUsersResponse{Users: userResponses}, nil
+}
+
+func (s *authServer) GetUser(ctx context.Context, req *authPb.GetUserRequest) (*userPb.User, error) {
+	// Extract token from gRPC metadata
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("missing metadata")
+	}
+
+	authHeader, exists := md["user-authorization"]
+	if !exists || len(authHeader) == 0 {
+		return nil, errors.New("unauthorized: missing token")
+	}
+
+	token := authHeader[0]
+	_, err := pg.VerifyJWT(token)
+	if err != nil {
+		return nil, fmt.Errorf("invalid token: %v", err)
+	}
+
+	user, err := pg.GetUserById(req.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }

@@ -1,0 +1,163 @@
+syntax = "proto3";  
+
+package order;  
+
+import "google/protobuf/timestamp.proto";  
+option go_package = "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/order";
+
+// Product-related messages  
+message Product {  
+  int32 id = 1;  
+  string name = 2;  
+  string description = 3;  
+  double price = 4;  
+  int32 inventory = 5;  
+  google.protobuf.Timestamp created_at = 6;  
+  google.protobuf.Timestamp updated_at = 7;  
+}  
+
+// Cart-related messages  
+message Cart {  
+  int32 id = 1;  
+  int32 user_id = 2;  
+  string status = 3;  
+  google.protobuf.Timestamp created_at = 4;  
+  google.protobuf.Timestamp updated_at = 5;  
+}  
+
+message CartItem {  
+  int32 id = 1;  
+  int32 cart_id = 2;  
+  int32 product_id = 3;  
+  int32 quantity = 4;  
+  google.protobuf.Timestamp created_at = 5;  
+}  
+
+message AddToCartRequest {  
+  int32 user_id = 1;  
+  int32 product_id = 2;  
+  int32 quantity = 3;  
+}  
+
+message AddToCartResponse {  
+  CartItem item = 1;  
+}  
+
+message ViewCartRequest {  
+  int32 user_id = 1;  
+}  
+
+message ViewCartResponse {  
+  Cart cart = 1;  
+  repeated CartItem items = 2;  
+}  
+
+message Order {  
+  int32 id = 1;  
+  int32 user_id = 2;  
+  int32 cart_id = 3;  
+  double total = 4;  
+  string status = 5;  
+  google.protobuf.Timestamp created_at = 6;  
+  google.protobuf.Timestamp updated_at = 7;  
+}  
+
+message PlaceOrderRequest {  
+  int32 user_id = 1;  
+  int32 cart_id = 2;  
+}  
+
+message PlaceOrderResponse {  
+  Order order = 1;  
+}  
+
+message UpdateOrderStatusRequest {  
+  int32 order_id = 1;  
+  string status = 2;  
+}  
+
+message UpdateOrderStatusResponse {  
+  Order order = 1;  
+}  
+
+message CancelOrderRequest {  
+  int32 order_id = 1;  
+}  
+
+message CancelOrderResponse {  
+  Order order = 1;  
+}  
+
+message ShippingAddress {  
+  int32 id = 1;  
+  int32 user_id = 2;  
+  string address = 3;  
+  string city = 4;  
+  string state = 5;  
+  string country = 6;  
+  string zip_code = 7;  
+  google.protobuf.Timestamp created_at = 8; 
+  google.protobuf.Timestamp updated_at = 9;  
+}  
+
+message Shipping {  
+  int32 id = 1;  
+  int32 order_id = 2;  
+  ShippingAddress address = 3;  
+  string status = 4;  
+  google.protobuf.Timestamp created_at = 5;  
+  google.protobuf.Timestamp updated_at = 6;  
+}  
+
+message CreateShippingRequest {  
+  int32 order_id = 1;  
+  ShippingAddress address = 2;  
+}  
+
+message CreateShippingResponse {  
+  Shipping shipping = 1;  
+}  
+
+message GetOrderRequest {
+    int32 order_id = 1;  
+}
+
+service OrderService {  
+  rpc AddToCart(AddToCartRequest) returns (AddToCartResponse) {}  
+  rpc ViewCart(ViewCartRequest) returns (ViewCartResponse) {}  
+
+  rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse) {}  
+  rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (UpdateOrderStatusResponse) {}  
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {}  
+  rpc GetOrder(GetOrderRequest) returns (Order) {}  
+
+  rpc CreateShipping(CreateShippingRequest) returns (CreateShippingResponse) {}  
+}  
+
+/*
+-Create Cart
+    User adds products to cart.
+    Cart is created with status: "active".
+
+-Add Items to Cart
+    User adds products to cart.
+    Cart items are created with product ID and quantity.
+
+-Create Order
+    If inventory is sufficient, create an order from the cart.
+    Update order status to "pending".
+    Reduce inventory quantities.
+
+-Order Processing
+    System processes the order (e.g., assigns to shipping).
+    Update order status to "processing".
+
+-Shipping and Delivery
+    Order is shipped to the user.
+    Update order status to "shipped" and later "delivered".
+
+-Cancel Order
+    User can cancel order before it is processed.
+    Update order status to "cancelled".
+    Restore inventory quantitie
+*/

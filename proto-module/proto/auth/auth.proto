@@ -2,6 +2,7 @@ syntax = "proto3";
 
 import "proto/product/product.proto";  
 import "proto/user/user.proto";  
+import "proto/order/order.proto";  
 
 option go_package = "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/auth";
 
@@ -19,6 +20,7 @@ message RegisterRequest {
 
 message LoginResponse {
   string token = 1;
+  int32 user_id = 2;  
 }
 
 message RegisterResponse {
@@ -31,15 +33,30 @@ message GetUsersResponse{
   repeated user.User users = 1;
 }
 
+message GetUserRequest {
+  int32 id = 1;
+}
+
 service Auth {
   rpc Login(LoginRequest) returns (LoginResponse) {}
   rpc Register(RegisterRequest) returns (RegisterResponse) {}
   rpc GetUsers(GetUsersRequest) returns (GetUsersResponse){}
-  
+  rpc GetUser(GetUserRequest) returns (user.User) {}  
+
   rpc CreateProduct(product.CreateProductRequest) returns (product.CreateProductResponse) {}
   rpc CreateCategories(product.CreateCategoriesRequest) returns (product.CreateCategoriesResponse) {}
   rpc GetCategories(product.GetCategoriesRequest) returns (product.GetCategoriesResponse) {}
   rpc GetProducts(product.GetProductsRequest) returns (product.GetProductsResponse){}
   rpc CreateReview(product.CreateReviewRequest) returns (product.CreateReviewResponse){}
   rpc GetReviews(product.GetReviewsRequest) returns (product.GetReviewsResponse){}
+
+  rpc GetProduct(product.GetProductRequest) returns (product.ProductItem) {}
+  rpc UpdateInventory(product.UpdateInventoryRequest) returns (product.UpdateInventoryResponse) {}  
+  rpc AddToCart(order.AddToCartRequest) returns (order.AddToCartResponse) {}  
+  rpc ViewCart(order.ViewCartRequest) returns (order.ViewCartResponse) {}  
+  rpc PlaceOrder(order.PlaceOrderRequest) returns (order.PlaceOrderResponse) {}  
+  rpc UpdateOrderStatus(order.UpdateOrderStatusRequest) returns (order.UpdateOrderStatusResponse) {}  
+  rpc CancelOrder(order.CancelOrderRequest) returns (order.CancelOrderResponse) {}  
+  rpc GetOrder(order.GetOrderRequest) returns (order.Order) {}  
+  rpc CreateShipping(order.CreateShippingRequest) returns (order.CreateShippingResponse) {}  
 }

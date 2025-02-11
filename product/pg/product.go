@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	productPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/product"
+	"github.com/my-crazy-lab/this-is-grpc/proto-module/proto/product"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"context"
@@ -74,7 +74,7 @@ func InsertCategories(name, description string) error {
 	return err
 }
 
-func GetCategories() ([]*productPb.Category, error) {
+func GetCategories() ([]*product.Category, error) {
 	query := "SELECT id, name, description, created_at, updated_at FROM categories"
 	rows, err := DBPool.Query(context.Background(), query)
 	if err != nil {
@@ -82,7 +82,7 @@ func GetCategories() ([]*productPb.Category, error) {
 	}
 	defer rows.Close()
 
-	categories := make([]*productPb.Category, 0)
+	categories := make([]*product.Category, 0)
 
 	for rows.Next() {
 		var (
@@ -99,7 +99,7 @@ func GetCategories() ([]*productPb.Category, error) {
 		}
 
 		// Convert time.Time to *timestamppb.Timestamp
-		category := &productPb.Category{
+		category := &product.Category{
 			Id:          id,
 			Name:        name,
 			Description: description,
@@ -139,7 +139,7 @@ const SqlFetchProductWithPagination = `
 `
 const LAYOUT = "2006-01-02 15:04:05.999999-07"
 
-func GetProducts(pageSize, pageIndex int32) ([]*productPb.ProductItem, int32, error) {
+func GetProducts(pageSize, pageIndex int32) ([]*product.ProductItem, int32, error) {
 	offset := (pageIndex - 1) * pageSize
 	rows, err := DBPool.Query(context.Background(), SqlFetchProductWithPagination, pageSize, offset)
 	if err != nil {
@@ -147,7 +147,7 @@ func GetProducts(pageSize, pageIndex int32) ([]*productPb.ProductItem, int32, er
 	}
 	defer rows.Close()
 
-	var products []*productPb.ProductItem
+	var products []*product.ProductItem
 	var total int32
 
 	for rows.Next() {
@@ -157,15 +157,15 @@ func GetProducts(pageSize, pageIndex int32) ([]*productPb.ProductItem, int32, er
 			categoriesJSON string
 		)
 
-		var product productPb.ProductItem
+		var productItem product.ProductItem
 
-		err := rows.Scan(&product.Id, &product.Name, &product.Description, &product.Price, &createdAt, &updatedAt, &product.Quantity, &categoriesJSON, &total)
+		err := rows.Scan(&productItem.Id, &productItem.Name, &productItem.Description, &productItem.Price, &createdAt, &updatedAt, &productItem.Quantity, &categoriesJSON, &total)
 		if err != nil {
 			return nil, 0, err
 		}
 
-		product.CreatedAt = timestamppb.New(createdAt)
-		product.UpdatedAt = timestamppb.New(updatedAt)
+		productItem.CreatedAt = timestamppb.New(createdAt)
+		productItem.UpdatedAt = timestamppb.New(updatedAt)
 
 		// Convert JSON categories to Go struct
 		var categoryList []struct {
@@ -179,13 +179,13 @@ func GetProducts(pageSize, pageIndex int32) ([]*productPb.ProductItem, int32, er
 			return nil, 0, err
 		}
 		// Convert to protobuf format
-		var protoCategories []*productPb.Category
+		var protoCategories []*product.Category
 		for _, c := range categoryList {
 			// Convert into time.Time
 			createdAt, _ := time.Parse(LAYOUT, c.CreatedAt)
 			updatedAt, _ := time.Parse(LAYOUT, c.UpdatedAt)
 
-			protoCategories = append(protoCategories, &productPb.Category{
+			protoCategories = append(protoCategories, &product.Category{
 				Id:          c.Id,
 				Name:        c.Name,
 				Description: c.Description,
@@ -194,9 +194,78 @@ func GetProducts(pageSize, pageIndex int32) ([]*productPb.ProductItem, int32, er
 			})
 		}
 
-		product.Categories = protoCategories
-		products = append(products, &product)
+		productItem.Categories = protoCategories
+		products = append(products, &productItem)
 	}
 
 	return products, total, nil
+}
+
+const SqlGetProductByProductId = `
+SELECT 
+		p.id, p.name, p.description, p.price, p.created_at, p.updated_at, 
+		COALESCE(i.quantity, 0) AS quantity,
+		COALESCE(json_agg(json_build_object(
+			'id', c.id, 
+			'name', c.name, 
+			'description', c.description, 
+			'created_at', c.created_at::TEXT, 
+			'updated_at', c.updated_at::TEXT
+		)) FILTER (WHERE c.id IS NOT NULL), '[]') AS categories
+	FROM products p
+	LEFT JOIN product_categories pc ON p.id = pc.product_id
+	LEFT JOIN categories c ON pc.category_id = c.id
+	LEFT JOIN inventory i ON p.id = i.product_id
+	WHERE p.id = $1
+	GROUP BY p.id, i.quantity;
+`
+
+func GetProduct(id int32) (*product.ProductItem, error) {
+	var (
+		productItem    product.ProductItem
+		createdAt      time.Time
+		updatedAt      time.Time
+		categoriesJSON string
+	)
+
+	err := DBPool.QueryRow(context.Background(), SqlGetProductByProductId, id).Scan(
+		&productItem.Id, &productItem.Name, &productItem.Description, &productItem.Price,
+		&createdAt, &updatedAt, &productItem.Quantity, &categoriesJSON,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	productItem.CreatedAt = timestamppb.New(createdAt)
+	productItem.UpdatedAt = timestamppb.New(updatedAt)
+
+	// Parse categories JSON
+	var categoryList []struct {
+		Id          int32  `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		CreatedAt   string `json:"created_at"`
+		UpdatedAt   string `json:"updated_at"`
+	}
+	if err := json.Unmarshal([]byte(categoriesJSON), &categoryList); err != nil {
+		return nil, err
+	}
+
+	// Convert to protobuf format
+	var protoCategories []*product.Category
+	for _, c := range categoryList {
+		createdAtParsed, _ := time.Parse(LAYOUT, c.CreatedAt)
+		updatedAtParsed, _ := time.Parse(LAYOUT, c.UpdatedAt)
+
+		protoCategories = append(protoCategories, &product.Category{
+			Id:          c.Id,
+			Name:        c.Name,
+			Description: c.Description,
+			CreatedAt:   timestamppb.New(createdAtParsed),
+			UpdatedAt:   timestamppb.New(updatedAtParsed),
+		})
+	}
+
+	productItem.Categories = protoCategories
+	return &productItem, nil
 }

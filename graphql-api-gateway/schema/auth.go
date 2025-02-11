@@ -107,6 +107,18 @@ var authQuery = graphql.Fields{
 			return users, nil
 		},
 	},
+	"GetUser": &graphql.Field{
+		Type:        userType,
+		Description: "Get user by id",
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			ctx := p.Context
+			users, err := getUser(ctx, client.AuthenticationService)
+			if err != nil {
+				log.Fatalf("get users error %v: ", err)
+			}
+			return users, nil
+		},
+	},
 }
 
 func login(client authPb.AuthClient, phone string, pass string) string {
@@ -152,4 +164,25 @@ func getUsers(ctx context.Context, client authPb.AuthClient) ([]*userPb.User, er
 	}
 
 	return resp.Users, nil
+}
+
+func getUser(ctx context.Context, client authPb.AuthClient) (*userPb.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	token, ok := ctx.Value("token").(string)
+	if !ok || token == "" {
+		return nil, errors.New("unauthorized: missing token")
+	}
+
+	// Create gRPC metadata with the token
+	md := metadata.New(map[string]string{"user-authorization": token})
+	ctx = metadata.NewOutgoingContext(ctx, md)
+
+	resp, err := client.GetUser(ctx, &authPb.GetUserRequest{})
+	if err != nil {
+		log.Fatalf("client.GetUser(_) = _, %v: ", err)
+	}
+
+	return resp, nil
 }

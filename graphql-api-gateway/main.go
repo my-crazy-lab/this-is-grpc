@@ -75,6 +75,16 @@ http://localhost:9090/graphql`)
 
 	fmt.Println("")
 
+	fmt.Println(`GET USER BY ID:
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
+--data '{ "query": "{ GetUser { id phoneNumber } }" }' \
+http://localhost:9090/graphql`)
+
+	fmt.Println("")
+
 	fmt.Println(`SIGN IN:
 curl \
 -X POST \
@@ -131,6 +141,16 @@ curl \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
 --data '{ "query": "{ GetProducts(pageSize:10, pageIndex: 1) { total products {id  name description price quantity categories {id name description created_at updated_at} created_at updated_at} } }" }' \
+http://localhost:9090/graphql`)
+
+	fmt.Println("")
+
+	fmt.Println(`GET PRODUCT BY ID:
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
+--data '{ "query": "{ GetProduct(id: 1) {id  name description price quantity categories {id name description created_at updated_at} created_at updated_at} }" }' \
 http://localhost:9090/graphql`)
 
 	http.ListenAndServe(":9090", nil)

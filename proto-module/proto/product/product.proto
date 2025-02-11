@@ -101,6 +101,19 @@ message GetCategoriesRequest{}
 message GetCategoriesResponse {
     repeated Category categories = 1;
 }
+message GetProductRequest{
+    int32 product_id = 1;  
+}
+
+message UpdateInventoryRequest {  
+    int32 product_id = 1;  
+    int32 quantity = 2;  
+}  
+
+message UpdateInventoryResponse {  
+    int32 product_id = 1;  
+    int32 new_quantity = 2;  
+}  
 
 service Product {
   rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse) {}
@@ -109,4 +122,6 @@ service Product {
   rpc GetProducts(GetProductsRequest) returns (GetProductsResponse){}
   rpc CreateReview(CreateReviewRequest) returns (CreateReviewResponse){}
   rpc GetReviews(GetReviewsRequest) returns (GetReviewsResponse){}
+  rpc GetProduct(GetProductRequest) returns (ProductItem) {}
+  rpc UpdateInventory(UpdateInventoryRequest) returns (UpdateInventoryResponse) {}  
 }

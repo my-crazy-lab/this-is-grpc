@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/my-crazy-lab/this-is-grpc/proto-module/proto/user"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx"
 	"github.com/joho/godotenv"
@@ -103,11 +105,11 @@ func GetUserByPhone(phone string) (*User, error) {
 	return &user, nil
 }
 
-func GetUserById(id int) (*User, error) {
+func GetUserById(id int32) (*user.User, error) {
 	query := "SELECT id, phone FROM users WHERE id = $1"
 	row := DBPool.QueryRow(context.Background(), query, id)
-	var user User
-	err := row.Scan(&user.ID, &user.PhoneNumber)
+	var user user.User
+	err := row.Scan(&user.Id, &user.PhoneNumber)
 	if err != nil {
 		if isErrNoRows(err) {
 			return nil, nil

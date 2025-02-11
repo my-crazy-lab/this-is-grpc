@@ -43,3 +43,12 @@ func (s *productServer) GetProducts(ctx context.Context, req *productPb.GetProdu
 
 	return &productPb.GetProductsResponse{Products: products, Total: total}, nil
 }
+
+func (s *productServer) GetProduct(ctx context.Context, req *productPb.GetProductRequest) (*productPb.ProductItem, error) {
+	product, err := pg.GetProduct(req.ProductId)
+	if err != nil {
+		return nil, err
+	}
+
+	return product, nil
+}
