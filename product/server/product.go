@@ -52,3 +52,12 @@ func (s *productServer) GetProduct(ctx context.Context, req *productPb.GetProduc
 
 	return product, nil
 }
+
+func (s *productServer) UpdateInventory(ctx context.Context, req *productPb.UpdateInventoryRequest) (*productPb.UpdateInventoryResponse, error) {
+	product, err := pg.UpdateInventory(req.ProductId, req.Quantity, req.Action)
+	if err != nil {
+		return nil, err
+	}
+
+	return product, nil
+}

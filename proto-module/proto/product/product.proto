@@ -108,6 +108,7 @@ message GetProductRequest{
 message UpdateInventoryRequest {  
     int32 product_id = 1;  
     int32 quantity = 2;  
+    string action = 3;
 }  
 
 message UpdateInventoryResponse {  

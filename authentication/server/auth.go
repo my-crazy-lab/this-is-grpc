@@ -2,36 +2,13 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 
 	"github.com/my-crazy-lab/this-is-grpc/authentication/pg"
 	authPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/auth"
 	userPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/user"
-	"google.golang.org/grpc/metadata"
 )
-
-func verifyToken(ctx context.Context) (*userPb.User, error) {
-	// Extract token from gRPC metadata
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return nil, errors.New("missing metadata")
-	}
-
-	authHeader, exists := md["user-authorization"]
-	if !exists || len(authHeader) == 0 {
-		return nil, errors.New("unauthorized: missing token")
-	}
-
-	token := authHeader[0]
-	userId, err := pg.VerifyJWT(token)
-	if err != nil {
-		return nil, fmt.Errorf("invalid token: %v", err)
-	}
-
-	return pg.GetUserById(int32(userId))
-}
 
 func (s *authServer) Login(_ context.Context, req *authPb.LoginRequest) (*authPb.LoginResponse, error) {
 	user, err := pg.GetUserByPhone(req.PhoneNumber)
@@ -71,22 +48,7 @@ func (s *authServer) Register(_ context.Context, req *authPb.RegisterRequest) (*
 }
 
 func (s *authServer) GetUsers(ctx context.Context, _ *authPb.GetUsersRequest) (*authPb.GetUsersResponse, error) {
-	// Extract token from gRPC metadata
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return nil, errors.New("missing metadata")
-	}
-
-	authHeader, exists := md["user-authorization"]
-	if !exists || len(authHeader) == 0 {
-		return nil, errors.New("unauthorized: missing token")
-	}
-
-	token := authHeader[0]
-	_, err := pg.VerifyJWT(token)
-	if err != nil {
-		return nil, fmt.Errorf("invalid token: %v", err)
-	}
+	verifyToken(ctx)
 
 	users, err := pg.GetUsers()
 	if err != nil {
@@ -105,22 +67,7 @@ func (s *authServer) GetUsers(ctx context.Context, _ *authPb.GetUsersRequest) (*
 }
 
 func (s *authServer) GetUser(ctx context.Context, req *authPb.GetUserRequest) (*userPb.User, error) {
-	// Extract token from gRPC metadata
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return nil, errors.New("missing metadata")
-	}
-
-	authHeader, exists := md["user-authorization"]
-	if !exists || len(authHeader) == 0 {
-		return nil, errors.New("unauthorized: missing token")
-	}
-
-	token := authHeader[0]
-	_, err := pg.VerifyJWT(token)
-	if err != nil {
-		return nil, fmt.Errorf("invalid token: %v", err)
-	}
+	verifyToken(ctx)
 
 	user, err := pg.GetUserById(req.Id)
 	if err != nil {

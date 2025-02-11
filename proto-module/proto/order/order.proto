@@ -52,7 +52,7 @@ message ViewCartResponse {
   repeated CartItem items = 2;  
 }  
 
-message Order {  
+message OrderItem {  
   int32 id = 1;  
   int32 user_id = 2;  
   int32 cart_id = 3;  
@@ -68,7 +68,7 @@ message PlaceOrderRequest {
 }  
 
 message PlaceOrderResponse {  
-  Order order = 1;  
+  OrderItem order = 1;  
 }  
 
 message UpdateOrderStatusRequest {  
@@ -77,7 +77,7 @@ message UpdateOrderStatusRequest {
 }  
 
 message UpdateOrderStatusResponse {  
-  Order order = 1;  
+  OrderItem order = 1;  
 }  
 
 message CancelOrderRequest {  
@@ -85,7 +85,7 @@ message CancelOrderRequest {
 }  
 
 message CancelOrderResponse {  
-  Order order = 1;  
+  OrderItem order = 1;  
 }  
 
 message ShippingAddress {  
@@ -122,14 +122,14 @@ message GetOrderRequest {
     int32 order_id = 1;  
 }
 
-service OrderService {  
+service Order {  
   rpc AddToCart(AddToCartRequest) returns (AddToCartResponse) {}  
   rpc ViewCart(ViewCartRequest) returns (ViewCartResponse) {}  
 
   rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse) {}  
   rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (UpdateOrderStatusResponse) {}  
   rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {}  
-  rpc GetOrder(GetOrderRequest) returns (Order) {}  
+  rpc GetOrder(GetOrderRequest) returns (OrderItem) {}  
 
   rpc CreateShipping(CreateShippingRequest) returns (CreateShippingResponse) {}  
 }  

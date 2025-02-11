@@ -269,3 +269,38 @@ func GetProduct(id int32) (*product.ProductItem, error) {
 	productItem.Categories = protoCategories
 	return &productItem, nil
 }
+
+func UpdateInventory(productID, quantity int32, action string) (*product.UpdateInventoryResponse, error) {
+	var currentQuantity int32
+
+	// Fetch current quantity
+	err := DBPool.QueryRow(context.Background(), "SELECT quantity FROM inventory WHERE product_id = $1", productID).Scan(&currentQuantity)
+	if err != nil {
+		return nil, err
+	}
+
+	if action == "decrease" && currentQuantity < quantity {
+		return nil, fmt.Errorf("Decrease quantity but current quantity < quantity want decrease")
+	}
+
+	query := `
+	UPDATE inventory 
+	SET quantity = 
+		CASE 
+			WHEN $2 = 'increase' THEN quantity + $3
+			WHEN $2 = 'decrease' THEN quantity - $3
+			ELSE quantity
+		END
+	WHERE product_id = $1
+	RETURNING product_id, quantity;
+	`
+
+	var updatedProductID, updatedQuantity int32
+
+	err = DBPool.QueryRow(context.Background(), query, productID, action, quantity).Scan(&updatedProductID, &updatedQuantity)
+	if err != nil {
+		return nil, err
+	}
+
+	return &product.UpdateInventoryResponse{ProductId: updatedProductID, NewQuantity: updatedQuantity}, nil
+}

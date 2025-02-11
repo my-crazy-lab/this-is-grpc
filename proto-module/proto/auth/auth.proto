@@ -52,11 +52,12 @@ service Auth {
 
   rpc GetProduct(product.GetProductRequest) returns (product.ProductItem) {}
   rpc UpdateInventory(product.UpdateInventoryRequest) returns (product.UpdateInventoryResponse) {}  
+
   rpc AddToCart(order.AddToCartRequest) returns (order.AddToCartResponse) {}  
   rpc ViewCart(order.ViewCartRequest) returns (order.ViewCartResponse) {}  
   rpc PlaceOrder(order.PlaceOrderRequest) returns (order.PlaceOrderResponse) {}  
   rpc UpdateOrderStatus(order.UpdateOrderStatusRequest) returns (order.UpdateOrderStatusResponse) {}  
   rpc CancelOrder(order.CancelOrderRequest) returns (order.CancelOrderResponse) {}  
-  rpc GetOrder(order.GetOrderRequest) returns (order.Order) {}  
+  rpc GetOrder(order.GetOrderRequest) returns (order.OrderItem) {}  
   rpc CreateShipping(order.CreateShippingRequest) returns (order.CreateShippingResponse) {}  
 }

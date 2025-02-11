@@ -42,7 +42,7 @@ type AuthClient interface {
 	PlaceOrder(ctx context.Context, in *order.PlaceOrderRequest, opts ...grpc.CallOption) (*order.PlaceOrderResponse, error)
 	UpdateOrderStatus(ctx context.Context, in *order.UpdateOrderStatusRequest, opts ...grpc.CallOption) (*order.UpdateOrderStatusResponse, error)
 	CancelOrder(ctx context.Context, in *order.CancelOrderRequest, opts ...grpc.CallOption) (*order.CancelOrderResponse, error)
-	GetOrder(ctx context.Context, in *order.GetOrderRequest, opts ...grpc.CallOption) (*order.Order, error)
+	GetOrder(ctx context.Context, in *order.GetOrderRequest, opts ...grpc.CallOption) (*order.OrderItem, error)
 	CreateShipping(ctx context.Context, in *order.CreateShippingRequest, opts ...grpc.CallOption) (*order.CreateShippingResponse, error)
 }
 
@@ -207,8 +207,8 @@ func (c *authClient) CancelOrder(ctx context.Context, in *order.CancelOrderReque
 	return out, nil
 }
 
-func (c *authClient) GetOrder(ctx context.Context, in *order.GetOrderRequest, opts ...grpc.CallOption) (*order.Order, error) {
-	out := new(order.Order)
+func (c *authClient) GetOrder(ctx context.Context, in *order.GetOrderRequest, opts ...grpc.CallOption) (*order.OrderItem, error) {
+	out := new(order.OrderItem)
 	err := c.cc.Invoke(ctx, "/auth.Auth/GetOrder", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -246,7 +246,7 @@ type AuthServer interface {
 	PlaceOrder(context.Context, *order.PlaceOrderRequest) (*order.PlaceOrderResponse, error)
 	UpdateOrderStatus(context.Context, *order.UpdateOrderStatusRequest) (*order.UpdateOrderStatusResponse, error)
 	CancelOrder(context.Context, *order.CancelOrderRequest) (*order.CancelOrderResponse, error)
-	GetOrder(context.Context, *order.GetOrderRequest) (*order.Order, error)
+	GetOrder(context.Context, *order.GetOrderRequest) (*order.OrderItem, error)
 	CreateShipping(context.Context, *order.CreateShippingRequest) (*order.CreateShippingResponse, error)
 	mustEmbedUnimplementedAuthServer()
 }
@@ -306,7 +306,7 @@ func (UnimplementedAuthServer) UpdateOrderStatus(context.Context, *order.UpdateO
 func (UnimplementedAuthServer) CancelOrder(context.Context, *order.CancelOrderRequest) (*order.CancelOrderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelOrder not implemented")
 }
-func (UnimplementedAuthServer) GetOrder(context.Context, *order.GetOrderRequest) (*order.Order, error) {
+func (UnimplementedAuthServer) GetOrder(context.Context, *order.GetOrderRequest) (*order.OrderItem, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrder not implemented")
 }
 func (UnimplementedAuthServer) CreateShipping(context.Context, *order.CreateShippingRequest) (*order.CreateShippingResponse, error) {

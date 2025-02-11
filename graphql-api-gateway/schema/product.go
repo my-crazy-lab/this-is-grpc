@@ -269,6 +269,48 @@ var productMutation = graphql.Fields{
 			return res, nil
 		},
 	},
+	"UpdateInventory": &graphql.Field{
+		Type: graphql.NewObject(graphql.ObjectConfig{
+			Name: "UpdateInventoryResponse",
+			Fields: graphql.Fields{
+				"product_id": &graphql.Field{
+					Type: graphql.Int,
+				},
+				"new_quantity": &graphql.Field{
+					Type: graphql.Int,
+				},
+			},
+		}),
+		Description: "Update inventory",
+		Args: graphql.FieldConfigArgument{
+			"product_id": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.Int)},
+			"quantity":   &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.Int)},
+			"action":     &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
+		},
+		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+			ctx := params.Context.(context.Context)
+
+			id := params.Args["product_id"].(int)
+			quantity := params.Args["quantity"].(int)
+			action := params.Args["action"].(string)
+
+			res := UpdateInventory(ctx, client.AuthenticationService, int32(id), int32(quantity), action)
+
+			return res, nil
+		},
+	},
+}
+
+func UpdateInventory(ctx context.Context, client auth.AuthClient, id, quantity int32, action string) *product.UpdateInventoryResponse {
+	ctx, cancel := context.WithTimeout(ctx, constants.TIMEOUT)
+	defer cancel()
+
+	resp, err := client.UpdateInventory(ctx, &product.UpdateInventoryRequest{ProductId: id, Quantity: quantity, Action: action})
+	if err != nil {
+		log.Fatalf("AuthenticationClient.UpdateInventory(_) = _, %v: ", err)
+	}
+
+	return resp
 }
 
 func getProductById(ctx context.Context, client auth.AuthClient, id int32) *product.ProductItem {
