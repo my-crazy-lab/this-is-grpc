@@ -116,6 +116,14 @@ message UpdateInventoryResponse {
     int32 new_quantity = 2;  
 }  
 
+message GetCurrentQuantityRequest {
+    int32 product_id = 1;  
+}
+
+message GetCurrentQuantityResponse{
+    int32 quantity = 1;  
+}
+
 service Product {
   rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse) {}
   rpc CreateCategories(CreateCategoriesRequest) returns (CreateCategoriesResponse) {}
@@ -125,4 +133,5 @@ service Product {
   rpc GetReviews(GetReviewsRequest) returns (GetReviewsResponse){}
   rpc GetProduct(GetProductRequest) returns (ProductItem) {}
   rpc UpdateInventory(UpdateInventoryRequest) returns (UpdateInventoryResponse) {}  
+  rpc GetCurrentQuantity(GetCurrentQuantityRequest) returns (GetCurrentQuantityResponse){}
 }

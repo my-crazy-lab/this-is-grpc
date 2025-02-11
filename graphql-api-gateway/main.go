@@ -163,5 +163,15 @@ curl \
 --data '{ "query": "mutation { UpdateInventory(product_id: 1, action: \"increase\", quantity: 2) { product_id new_quantity } }" }' \
 http://localhost:9090/graphql`)
 
+	fmt.Println("")
+
+	fmt.Println(`ADD TO CART:
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
+--data '{ "query": "mutation { AddToCart(product_id: 22, user_id: 4, quantity: 2) { id cart_id product_id quantity created_at } }" }' \
+http://localhost:9090/graphql`)
+
 	http.ListenAndServe(":9090", nil)
 }

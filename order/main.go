@@ -28,7 +28,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/my-crazy-lab/this-is-grpc/product/pg"
+	"github.com/my-crazy-lab/this-is-grpc/order/pg"
 	"github.com/my-crazy-lab/this-is-grpc/proto-module/proto/order"
 	"github.com/my-crazy-lab/this-is-grpc/proto-module/utils"
 

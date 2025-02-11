@@ -24,5 +24,6 @@ var RootMutation = graphql.NewObject(graphql.ObjectConfig{
 		"CreateProduct":    productMutation["CreateProduct"],
 		"CreateCategories": productMutation["CreateCategories"],
 		"UpdateInventory":  productMutation["UpdateInventory"],
+		"AddToCart":  orderMutation["AddToCart"],
 	},
 })

@@ -12,7 +12,7 @@ import (
 
 // avoid services interface establish multi times
 var OrderService order.OrderClient
-var OrderConnection *grpc.ClientConn
+var OrderClientConnection *grpc.ClientConn
 
 var addrOrderService = flag.String("addrOrderService", "localhost:50053", "the address to connect to")
 
@@ -29,6 +29,6 @@ func NewOrderClient() {
 		log.Fatalf("did not connect: %v", err)
 	}
 
-	OrderConnection = conn
+	OrderClientConnection = conn
 	OrderService = order.NewOrderClient(conn)
 }

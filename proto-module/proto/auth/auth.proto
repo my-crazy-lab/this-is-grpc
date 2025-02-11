@@ -49,10 +49,9 @@ service Auth {
   rpc GetProducts(product.GetProductsRequest) returns (product.GetProductsResponse){}
   rpc CreateReview(product.CreateReviewRequest) returns (product.CreateReviewResponse){}
   rpc GetReviews(product.GetReviewsRequest) returns (product.GetReviewsResponse){}
-
   rpc GetProduct(product.GetProductRequest) returns (product.ProductItem) {}
   rpc UpdateInventory(product.UpdateInventoryRequest) returns (product.UpdateInventoryResponse) {}  
-
+  
   rpc AddToCart(order.AddToCartRequest) returns (order.AddToCartResponse) {}  
   rpc ViewCart(order.ViewCartRequest) returns (order.ViewCartResponse) {}  
   rpc PlaceOrder(order.PlaceOrderRequest) returns (order.PlaceOrderResponse) {}  
@@ -60,4 +59,5 @@ service Auth {
   rpc CancelOrder(order.CancelOrderRequest) returns (order.CancelOrderResponse) {}  
   rpc GetOrder(order.GetOrderRequest) returns (order.OrderItem) {}  
   rpc CreateShipping(order.CreateShippingRequest) returns (order.CreateShippingResponse) {}  
+  rpc GetCurrentQuantity(product.GetCurrentQuantityRequest) returns (product.GetCurrentQuantityResponse){}
 }
