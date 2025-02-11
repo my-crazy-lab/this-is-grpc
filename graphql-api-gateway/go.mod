@@ -2,11 +2,15 @@ module github.com/my-crazy-lab/this-is-grpc/graphql-api-gateway
 
 go 1.23.6
 
-replace github.com/my-crazy-lab/this-is-grpc/proto-module => ../proto-module
+replace (
+	github.com/my-crazy-lab/this-is-grpc/proto-module => ../proto-module
+	github.com/my-crazy-lab/this-is-grpc/shared => ../shared
+)
 
 require (
 	github.com/graphql-go/graphql v0.8.1
 	github.com/my-crazy-lab/this-is-grpc/proto-module v0.0.0-00010101000000-000000000000
+	github.com/my-crazy-lab/this-is-grpc/shared v0.0.0-00010101000000-000000000000
 	google.golang.org/grpc v1.70.0
 )
 

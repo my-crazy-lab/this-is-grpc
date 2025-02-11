@@ -70,3 +70,17 @@ func (s *authServer) CreateProduct(ctx context.Context, req *productPb.CreatePro
 
 	return resp, nil
 }
+
+func (s *authServer) GetProducts(ctx context.Context, req *productPb.GetProductsRequest) (*productPb.GetProductsResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	verifyToken(ctx)
+
+	resp, err := client.ProductService.GetProducts(ctx, req)
+	if err != nil {
+		log.Fatalf("From ProductClient.GetProducts(_) = _, %v: ", err)
+	}
+
+	return resp, nil
+}

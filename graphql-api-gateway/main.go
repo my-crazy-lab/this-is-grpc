@@ -99,7 +99,7 @@ http://localhost:9090/graphql`)
 curl \
 -X POST \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyODgyMzZ9.bAo1X9zqDqAqROIiBUxN5LCWse5czp6tOlCQCacgzAw" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
 --data '{ "query": "mutation { CreateCategories(name:\"must unique 2\", description:\"description hihihi\") { id } }" }' \
 http://localhost:9090/graphql`)
 
@@ -109,7 +109,7 @@ http://localhost:9090/graphql`)
 curl \
 -X POST \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyODgyMzZ9.bAo1X9zqDqAqROIiBUxN5LCWse5czp6tOlCQCacgzAw" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
 --data '{ "query": "{ GetCategories { id  name description created_at updated_at } }" }' \
 http://localhost:9090/graphql`)
 
@@ -119,8 +119,18 @@ http://localhost:9090/graphql`)
 curl \
 -X POST \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyODgyMzZ9.bAo1X9zqDqAqROIiBUxN5LCWse5czp6tOlCQCacgzAw" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
 --data '{ "query": "mutation { CreateProduct(name:\"product 1\", description:\"description hihihi\", price: 200.5, quantity: 2, categories: [1,2]) { id } }" }' \
+http://localhost:9090/graphql`)
+
+	fmt.Println("")
+
+	fmt.Println(`GET PRODUCTS:
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
+--data '{ "query": "{ GetProducts(pageSize:10, pageIndex: 1) { total products {id  name description price quantity categories {id name description created_at updated_at} created_at updated_at} } }" }' \
 http://localhost:9090/graphql`)
 
 	http.ListenAndServe(":9090", nil)

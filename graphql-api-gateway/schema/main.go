@@ -1,6 +1,8 @@
 package schema
 
-import "github.com/graphql-go/graphql"
+import (
+	"github.com/graphql-go/graphql"
+)
 
 var RootQuery = graphql.NewObject(graphql.ObjectConfig{
 	Name: "RootQuery",

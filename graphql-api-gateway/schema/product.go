@@ -5,14 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/graphql-go/graphql"
-	authPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/auth"
-	productPb "github.com/my-crazy-lab/this-is-grpc/proto-module/proto/product"
+	"github.com/my-crazy-lab/this-is-grpc/proto-module/proto/auth"
+	"github.com/my-crazy-lab/this-is-grpc/proto-module/proto/product"
 	"google.golang.org/grpc/metadata"
 
-	client "github.com/my-crazy-lab/this-is-grpc/proto-module/client"
+	"github.com/my-crazy-lab/this-is-grpc/proto-module/client"
+	"github.com/my-crazy-lab/this-is-grpc/shared/constants"
+	"github.com/my-crazy-lab/this-is-grpc/shared/utils"
 )
 
 var categoryItemType = graphql.NewObject(graphql.ObjectConfig{
@@ -35,6 +36,20 @@ var categoryItemType = graphql.NewObject(graphql.ObjectConfig{
 		},
 	},
 })
+
+var getProductResponse = graphql.NewObject(
+	graphql.ObjectConfig{
+		Name: "GetProductResponse",
+		Fields: graphql.Fields{
+			"total": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"products": &graphql.Field{
+				Type: graphql.NewList(productItemType),
+			},
+		},
+	},
+)
 
 var productItemType = graphql.NewObject(
 	graphql.ObjectConfig{
@@ -95,12 +110,19 @@ var reviewType = graphql.NewObject(
 
 var productQuery = graphql.Fields{
 	"GetProducts": &graphql.Field{
-		Type:        graphql.NewList(productItemType),
+		Type:        getProductResponse,
 		Description: "Get all products",
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			ctx := p.Context.(context.Context)
+		Args: graphql.FieldConfigArgument{
+			"pageSize":  &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.Int)},
+			"pageIndex": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.Int)},
+		},
+		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+			ctx := params.Context.(context.Context)
 
-			return getProducts(ctx, client.AuthenticationService), nil
+			pageSize := params.Args["pageSize"].(int)
+			pageIndex := params.Args["pageIndex"].(int)
+
+			return getProducts(ctx, client.AuthenticationService, pageSize, pageIndex), nil
 		},
 	},
 	"GetReviews": &graphql.Field{
@@ -117,10 +139,33 @@ var productQuery = graphql.Fields{
 		Description: "Get all categories",
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			ctx := p.Context.(context.Context)
+			categories := getCategories(ctx, client.AuthenticationService).Categories
 
-			return getCategories(ctx, client.AuthenticationService).Categories, nil
+			res := make([]CategoriesResponse, len(categories))
+
+			for _, category := range categories {
+				var r CategoriesResponse
+
+				r.Name = category.Name
+				r.Id = category.Id
+				r.Description = category.Description
+				r.CreatedAt = utils.PbTimestampToISO(category.CreatedAt)
+				r.UpdatedAt = utils.PbTimestampToISO(category.UpdatedAt)
+
+				res = append(res, r)
+			}
+
+			return res, nil
 		},
 	},
+}
+
+type CategoriesResponse struct {
+	Id          int32  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
 }
 
 var productMutation = graphql.Fields{
@@ -174,7 +219,7 @@ var productMutation = graphql.Fields{
 
 			ctx := params.Context
 
-			res := createProduct(ctx, client.AuthenticationService, &productPb.CreateProductRequest{
+			res := createProduct(ctx, client.AuthenticationService, &product.CreateProductRequest{
 				Name: name, Description: description, Price: price, Quantity: int32(quantity), CategoryIds: categories,
 			})
 
@@ -205,7 +250,7 @@ var productMutation = graphql.Fields{
 
 			ctx := params.Context
 
-			res, err := createCategories(ctx, client.AuthenticationService, &productPb.CreateCategoriesRequest{
+			res, err := createCategories(ctx, client.AuthenticationService, &product.CreateCategoriesRequest{
 				Name: name, Description: description,
 			})
 			if err != nil {
@@ -217,11 +262,11 @@ var productMutation = graphql.Fields{
 	},
 }
 
-func getProducts(ctx context.Context, client authPb.AuthClient) *productPb.GetProductsResponse {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+func getProducts(ctx context.Context, client auth.AuthClient, pageSize, pageIndex int) *product.GetProductsResponse {
+	ctx, cancel := context.WithTimeout(ctx, constants.TIMEOUT)
 	defer cancel()
 
-	resp, err := client.GetProducts(ctx, &productPb.GetProductsRequest{})
+	resp, err := client.GetProducts(ctx, &product.GetProductsRequest{Pagination: &product.Pagination{PageSize: int32(pageSize), PageIndex: int32(pageIndex)}})
 	if err != nil {
 		log.Fatalf("AuthenticationClient.GetProducts(_) = _, %v: ", err)
 	}
@@ -229,11 +274,11 @@ func getProducts(ctx context.Context, client authPb.AuthClient) *productPb.GetPr
 	return resp
 }
 
-func getReviews(ctx context.Context, client authPb.AuthClient) *productPb.GetReviewsResponse {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+func getReviews(ctx context.Context, client auth.AuthClient) *product.GetReviewsResponse {
+	ctx, cancel := context.WithTimeout(ctx, constants.TIMEOUT)
 	defer cancel()
 
-	resp, err := client.GetReviews(ctx, &productPb.GetReviewsRequest{})
+	resp, err := client.GetReviews(ctx, &product.GetReviewsRequest{})
 	if err != nil {
 		log.Fatalf("AuthenticationClient.GetReviews(_) = _, %v: ", err)
 	}
@@ -241,11 +286,11 @@ func getReviews(ctx context.Context, client authPb.AuthClient) *productPb.GetRev
 	return resp
 }
 
-func getCategories(ctx context.Context, client authPb.AuthClient) *productPb.GetCategoriesResponse {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+func getCategories(ctx context.Context, client auth.AuthClient) *product.GetCategoriesResponse {
+	ctx, cancel := context.WithTimeout(ctx, constants.TIMEOUT)
 	defer cancel()
 
-	resp, err := client.GetCategories(ctx, &productPb.GetCategoriesRequest{})
+	resp, err := client.GetCategories(ctx, &product.GetCategoriesRequest{})
 	if err != nil {
 		log.Fatalf("AuthenticationClient.GetReviews(_) = _, %v: ", err)
 	}
@@ -253,8 +298,8 @@ func getCategories(ctx context.Context, client authPb.AuthClient) *productPb.Get
 	return resp
 }
 
-func createProduct(ctx context.Context, client authPb.AuthClient, params *productPb.CreateProductRequest) *productPb.CreateProductResponse {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+func createProduct(ctx context.Context, client auth.AuthClient, params *product.CreateProductRequest) *product.CreateProductResponse {
+	ctx, cancel := context.WithTimeout(ctx, constants.TIMEOUT)
 	defer cancel()
 
 	resp, err := client.CreateProduct(ctx, params)
@@ -265,8 +310,8 @@ func createProduct(ctx context.Context, client authPb.AuthClient, params *produc
 	return resp
 }
 
-func createCategories(ctx context.Context, client authPb.AuthClient, params *productPb.CreateCategoriesRequest) (*productPb.CreateCategoriesResponse, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+func createCategories(ctx context.Context, client auth.AuthClient, params *product.CreateCategoriesRequest) (*product.CreateCategoriesResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, constants.TIMEOUT)
 	defer cancel()
 
 	token, ok := ctx.Value("token").(string)

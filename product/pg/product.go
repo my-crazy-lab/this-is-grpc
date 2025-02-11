@@ -1,6 +1,7 @@
 package pg
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -102,8 +103,8 @@ func GetCategories() ([]*productPb.Category, error) {
 			Id:          id,
 			Name:        name,
 			Description: description,
-			CreatedAt:   timestamppb.New(createdAt), // ✅ Convert correctly
-			UpdatedAt:   timestamppb.New(updatedAt), // ✅ Convert correctly
+			CreatedAt:   timestamppb.New(createdAt),
+			UpdatedAt:   timestamppb.New(updatedAt),
 		}
 
 		categories = append(categories, category)
@@ -114,4 +115,88 @@ func GetCategories() ([]*productPb.Category, error) {
 	}
 
 	return categories, nil
+}
+
+const SqlFetchProductWithPagination = `
+	SELECT 
+		p.id, p.name, p.description, p.price, p.created_at, p.updated_at, 
+		COALESCE(i.quantity, 0) AS quantity,
+		COALESCE(json_agg(json_build_object(
+			'id', c.id, 
+			'name', c.name, 
+			'description', c.description, 
+			'created_at', c.created_at::TEXT, 
+			'updated_at', c.updated_at::TEXT)) 
+			FILTER (WHERE c.id IS NOT NULL), '[]') AS categories,
+		COUNT(*) OVER() AS total_count
+	FROM products p
+	LEFT JOIN product_categories pc ON p.id = pc.product_id
+	LEFT JOIN categories c ON pc.category_id = c.id
+	LEFT JOIN inventory i ON p.id = i.product_id
+	GROUP BY p.id, i.quantity
+	ORDER BY p.created_at DESC
+	LIMIT $1 OFFSET $2;
+`
+const LAYOUT = "2006-01-02 15:04:05.999999-07"
+
+func GetProducts(pageSize, pageIndex int32) ([]*productPb.ProductItem, int32, error) {
+	offset := (pageIndex - 1) * pageSize
+	rows, err := DBPool.Query(context.Background(), SqlFetchProductWithPagination, pageSize, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var products []*productPb.ProductItem
+	var total int32
+
+	for rows.Next() {
+		var (
+			createdAt      time.Time
+			updatedAt      time.Time
+			categoriesJSON string
+		)
+
+		var product productPb.ProductItem
+
+		err := rows.Scan(&product.Id, &product.Name, &product.Description, &product.Price, &createdAt, &updatedAt, &product.Quantity, &categoriesJSON, &total)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		product.CreatedAt = timestamppb.New(createdAt)
+		product.UpdatedAt = timestamppb.New(updatedAt)
+
+		// Convert JSON categories to Go struct
+		var categoryList []struct {
+			Id          int32  `json:"id"`
+			Name        string `json:"name"`
+			Description string `json:"description"`
+			CreatedAt   string `json:"created_at"`
+			UpdatedAt   string `json:"updated_at"`
+		}
+		if err := json.Unmarshal([]byte(categoriesJSON), &categoryList); err != nil {
+			return nil, 0, err
+		}
+		// Convert to protobuf format
+		var protoCategories []*productPb.Category
+		for _, c := range categoryList {
+			// Convert into time.Time
+			createdAt, _ := time.Parse(LAYOUT, c.CreatedAt)
+			updatedAt, _ := time.Parse(LAYOUT, c.UpdatedAt)
+
+			protoCategories = append(protoCategories, &productPb.Category{
+				Id:          c.Id,
+				Name:        c.Name,
+				Description: c.Description,
+				CreatedAt:   timestamppb.New(createdAt),
+				UpdatedAt:   timestamppb.New(updatedAt),
+			})
+		}
+
+		product.Categories = protoCategories
+		products = append(products, &product)
+	}
+
+	return products, total, nil
 }

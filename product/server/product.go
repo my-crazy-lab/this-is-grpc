@@ -34,3 +34,12 @@ func (s *productServer) GetCategories(ctx context.Context, req *productPb.GetCat
 
 	return &productPb.GetCategoriesResponse{Categories: categories}, nil
 }
+
+func (s *productServer) GetProducts(ctx context.Context, req *productPb.GetProductsRequest) (*productPb.GetProductsResponse, error) {
+	products, total, err := pg.GetProducts(req.Pagination.PageSize, req.Pagination.PageIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	return &productPb.GetProductsResponse{Products: products, Total: total}, nil
+}
