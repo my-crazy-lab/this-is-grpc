@@ -125,39 +125,9 @@ message GetOrderRequest {
 service Order {  
   rpc AddToCart(AddToCartRequest) returns (AddToCartResponse) {}  
   rpc ViewCart(ViewCartRequest) returns (ViewCartResponse) {}  
-
   rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse) {}  
   rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (UpdateOrderStatusResponse) {}  
   rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {}  
   rpc GetOrder(GetOrderRequest) returns (OrderItem) {}  
-
   rpc CreateShipping(CreateShippingRequest) returns (CreateShippingResponse) {}  
 }  
-
-/*
--Create Cart
-    User adds products to cart.
-    Cart is created with status: "active".
-
--Add Items to Cart
-    User adds products to cart.
-    Cart items are created with product ID and quantity.
-
--Create Order
-    If inventory is sufficient, create an order from the cart.
-    Update order status to "pending".
-    Reduce inventory quantities.
-
--Order Processing
-    System processes the order (e.g., assigns to shipping).
-    Update order status to "processing".
-
--Shipping and Delivery
-    Order is shipped to the user.
-    Update order status to "shipped" and later "delivered".
-
--Cancel Order
-    User can cancel order before it is processed.
-    Update order status to "cancelled".
-    Restore inventory quantitie
-*/

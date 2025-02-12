@@ -386,6 +386,12 @@ func createCategories(ctx context.Context, client auth.AuthClient, params *produ
 	md := metadata.New(map[string]string{"user-authorization": token})
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
+	// ** Apply shared
+	// ctx, err := utils.CreateMetadataToken(ctx)
+	// if err != nil {
+	// 	log.Fatalf("CreateMetadataToken error = _, %v: ", err)
+	// }
+
 	resp, err := client.CreateCategories(ctx, params)
 	if err != nil {
 		log.Fatalf("AuthenticationClient.CreateCategories(_) = _, %v: ", err)
