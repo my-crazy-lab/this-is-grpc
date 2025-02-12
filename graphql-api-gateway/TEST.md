@@ -108,3 +108,62 @@ curl \
 http://localhost:9090/graphql
 ```
 
+### VIEW CART
+```
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
+--data '{ "query": "{ ViewCart(user_id:\"4\") { id user_id status created_at updated_at items { id cart_id product_id quantity created_at } } }" }' \
+http://localhost:9090/graphql
+```
+
+### GET ORDER
+```
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
+--data '{ "query": "{ GetOrder(order_id: \"1\") { id user_id cart_id total status created_at updated_at } }" }' \
+http://localhost:9090/graphql
+```
+
+### PLACE ORDER
+```
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
+--data '{ "query": "mutation { PlaceOrder(user_id: "\4"\, cart_id: "\1"\) { id user_id cart_id total status created_at updated_at } }" }' \
+http://localhost:9090/graphql
+```
+
+### UPDATE ORDER STATUS
+```
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
+--data '{ "query": "mutation { UpdateOrderStatus(order_id: "\1"\, status: "\pending"\) { id user_id cart_id total status created_at updated_at } }" }' \
+http://localhost:9090/graphql
+```
+
+### CANCEL ORDER
+```
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
+--data '{ "query": "mutation { CancelOrder(order_id: "\1"\) { id user_id cart_id total status created_at updated_at } }" }' \
+http://localhost:9090/graphql
+```
+
+### CREATE SHIPPING 
+```
+curl \
+-X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzkyNjY3MTV9.9bIhPrDnO8k7h0gnnZHF2afh7fRAyrwuOz14gdWf8PA" \
+--data '{ "query": "mutation { CreateShipping(order_id: "\1"\, address: { user_id: 4, address: "\CaoLanh"\, city: "\HCM"\, country: "\Vietnam"\, zip_code: "\123123"\ }) { id order_id address { id user_id address country city zip_code created_at updated_at } status created_at updated_at } }" }' \
+http://localhost:9090/graphql
+```

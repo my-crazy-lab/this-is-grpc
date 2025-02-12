@@ -331,14 +331,20 @@ func CreateShipping(req *order.CreateShippingRequest) (*order.CreateShippingResp
 	defer tx.Rollback(ctx)
 
 	// Insert shipping address
+	const SqlInsertShippingAddress = `
+		INSERT INTO shipping_addresses 
+		(user_id, address, city, state, country, zip_code, created_at) 
+		VALUES 
+		($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) 
+		RETURNING
+		id, created_at
+	`
 	var addressID int32
 	var createdAt, updatedAt time.Time
 
-	err = tx.QueryRow(ctx, `
-		INSERT INTO shipping_addresses (user_id, address, city, state, country, zip_code, created_at) 
-		VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) 
-		RETURNING id, created_at
-	`, req.Address.UserId, req.Address.Address, req.Address.City, req.Address.State, req.Address.Country, req.Address.ZipCode).
+	err = tx.QueryRow(ctx, SqlInsertShippingAddress,
+		req.Address.UserId, req.Address.Address, req.Address.City,
+		req.Address.State, req.Address.Country, req.Address.ZipCode).
 		Scan(&addressID, &createdAt)
 
 	if err != nil {
@@ -346,12 +352,15 @@ func CreateShipping(req *order.CreateShippingRequest) (*order.CreateShippingResp
 	}
 
 	// Insert shipping record
-	var shippingID int32
-	err = tx.QueryRow(ctx, `
+	const SqlInsertShippingRecord = `
 		INSERT INTO shippings (order_id, shipping_address_id, status, created_at, updated_at) 
 		VALUES ($1, $2, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
 		RETURNING id, created_at, updated_at
-	`, req.OrderId, addressID).Scan(&shippingID, &createdAt, &updatedAt)
+	`
+	var shippingID int32
+	err = tx.QueryRow(ctx, SqlInsertShippingRecord,
+		req.OrderId, addressID).
+		Scan(&shippingID, &createdAt, &updatedAt)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create shipping: %w", err)
@@ -391,13 +400,14 @@ func ViewCart(req *order.ViewCartRequest) (*order.ViewCartResponse, error) {
 	ctx := context.Background()
 
 	// Get the active cart for the user
-	var cart order.Cart
-	err := DBPool.QueryRow(ctx, `
+	const SqlGetActiveCartByUserId = `
 		SELECT id, user_id, status, created_at, updated_at 
 		FROM carts 
 		WHERE user_id = $1 AND status = 'active' 
 		LIMIT 1
-	`, req.UserId).Scan(
+	`
+	var cart order.Cart
+	err := DBPool.QueryRow(ctx, SqlGetActiveCartByUserId, req.UserId).Scan(
 		&cart.Id, &cart.UserId, &cart.Status,
 		&cart.CreatedAt, &cart.UpdatedAt,
 	)
@@ -406,11 +416,12 @@ func ViewCart(req *order.ViewCartRequest) (*order.ViewCartResponse, error) {
 	}
 
 	// Get the cart items
-	rows, err := DBPool.Query(ctx, `
+	const SqlGetCartItems = `
 		SELECT id, cart_id, product_id, quantity, created_at 
 		FROM cart_items 
 		WHERE cart_id = $1
-	`, cart.Id)
+	`
+	rows, err := DBPool.Query(ctx, SqlGetCartItems, cart.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch cart items: %w", err)
 	}
